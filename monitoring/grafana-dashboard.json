@@ -1,0 +1,243 @@
+{
+  "id": null,
+  "uid": "ai-code-reviewer",
+  "title": "AI Code Reviewer",
+  "tags": [],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Gateway",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 }
+    },
+    {
+      "id": 2,
+      "title": "Gateway — Request Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 1 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"gateway\"}[1m])",
+          "legendFormat": "{{method}} {{handler}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Gateway — p99 Latency",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 1 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"gateway\"}[1m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Gateway — Error Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 1 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"gateway\", status=~\"5..\"}[1m])",
+          "legendFormat": "5xx errors"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Webhook",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 9 }
+    },
+    {
+      "id": 11,
+      "title": "Webhook — Request Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 10 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"webhook\"}[1m])",
+          "legendFormat": "{{method}} {{handler}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Webhook — p99 Latency",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 10 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"webhook\"}[1m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Webhook — Error Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 10 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"webhook\", status=~\"5..\"}[1m])",
+          "legendFormat": "5xx errors"
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "title": "Orchestrator",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 }
+    },
+    {
+      "id": 21,
+      "title": "Orchestrator — Request Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 19 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"orchestrator\"}[1m])",
+          "legendFormat": "{{method}} {{handler}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "title": "Orchestrator — p99 Latency",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 19 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"orchestrator\"}[1m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "title": "Orchestrator — Error Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 19 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"orchestrator\", status=~\"5..\"}[1m])",
+          "legendFormat": "5xx errors"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "title": "Reviewer",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 27 }
+    },
+    {
+      "id": 31,
+      "title": "Reviewer — Request Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 28 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"reviewer\"}[1m])",
+          "legendFormat": "{{method}} {{handler}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "title": "Reviewer — p99 Latency",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 28 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"reviewer\"}[1m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "title": "Reviewer — Error Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 28 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"reviewer\", status=~\"5..\"}[1m])",
+          "legendFormat": "5xx errors"
+        }
+      ]
+    },
+    {
+      "id": 40,
+      "title": "Learner",
+      "type": "row",
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 36 }
+    },
+    {
+      "id": 41,
+      "title": "Learner — Request Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 37 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"learner\"}[1m])",
+          "legendFormat": "{{method}} {{handler}} {{status}}"
+        }
+      ]
+    },
+    {
+      "id": 42,
+      "title": "Learner — p99 Latency",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 37 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"learner\"}[1m]))",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "id": 43,
+      "title": "Learner — Error Rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 37 },
+      "targets": [
+        {
+          "expr": "rate(http_requests_total{job=\"learner\", status=~\"5..\"}[1m])",
+          "legendFormat": "5xx errors"
+        }
+      ]
+    }
+  ],
+  "time": { "from": "now-1h", "to": "now" }
+}
