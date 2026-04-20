@@ -6,6 +6,29 @@ Follow every step in exact order. Do not skip anything.
 
 ---
 
+## Progress Tracker
+
+| Phase | Status |
+|---|---|
+| Phase 1 — Accounts | DONE |
+| Phase 2 — Install Tools | DONE |
+| Phase 3 — AWS Account Setup | DONE |
+| Phase 4 — GitHub Repository Setup | DONE |
+| Phase 5 — Create GitHub App | DONE |
+| Phase 6 — LangFuse Setup | DONE |
+| Phase 7 — OpenAI API Key | DONE |
+| Phase 8 — Provision AWS Infrastructure | NEXT |
+| Phase 9 — Configure GitHub Secrets | Pending |
+| Phase 10 — First Deployment via GitHub Actions | Pending |
+| Phase 11 — Connect kubectl to EKS | Pending |
+| Phase 12 — Apply Kubernetes Manifests | Pending |
+| Phase 13 — Set Up Grafana and Prometheus | Pending |
+| Phase 14 — Set Up LangFuse Tracing | Pending |
+| Phase 15 — Update GitHub App Webhook URL | Pending |
+| Phase 16 — End-to-End Test | Pending |
+
+---
+
 ## Table of Contents
 
 1. [What This System Does](#1-what-this-system-does)
@@ -659,9 +682,23 @@ After adding all secrets, you should have 10 secrets total in the list.
 
 ## 13. Phase 10 — First Deployment via GitHub Actions
 
-### 13.1 Trigger the CI/CD pipeline
+### How the CI/CD pipelines work (per-service architecture)
 
-The pipeline runs automatically every time you push to the main branch. Push a small change to trigger it:
+This project uses **5 separate pipelines** — one per service. Each pipeline is independent:
+
+| Pipeline file | Triggers when you change |
+|---|---|
+| `gateway.yml` | anything inside `services/gateway/` |
+| `webhook.yml` | anything inside `services/webhook/` |
+| `orchestrator.yml` | anything inside `services/orchestrator/` |
+| `reviewer.yml` | anything inside `services/reviewer/` |
+| `learner.yml` | anything inside `services/learner/` |
+
+This means if you fix a bug in the orchestrator, only the orchestrator pipeline runs — the other 4 services are untouched. Each pipeline has the same 3 jobs: **test → build-and-push → deploy**.
+
+### 13.1 Trigger all 5 pipelines for the first deployment
+
+Because this is the first time, you need to trigger all 5 pipelines at once. The easiest way is to touch a file in each service:
 
 Open CMD:
 
@@ -670,45 +707,43 @@ cd "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer"
 ```
 
 ```
-echo # ai-code-reviewer > README.md
+git add services/
 ```
 
 ```
-git add README.md
-```
-
-```
-git commit -m "trigger first production deployment"
+git commit -m "deploy: trigger initial deployment for all services"
 ```
 
 ```
 git push origin main
 ```
 
-### 13.2 Watch the pipeline run
+This push touches all service directories so all 5 pipelines trigger simultaneously.
 
-1. Go to https://github.com/YOUR_USERNAME/ai-code-reviewer
+### 13.2 Watch the pipelines run
+
+1. Go to https://github.com/data-guru0/MAJOR-PROJECT-KRISH-SIR
 2. Click the "Actions" tab at the top
-3. You will see a workflow run named "CI" with a yellow spinner (running)
-4. Click on it to open it
+3. You will see **5 separate workflow runs** all starting at the same time — one per service
+4. Click on any of them to watch it
 
-You will see three jobs in sequence:
+Each workflow has three jobs in sequence:
 
-**Job 1 — test (2-3 minutes)**
+**Job 1 — test (1-2 minutes)**
 - Sets up Python 3.11
-- Installs pip packages for each service
-- Runs pytest (passes quickly since no tests are written yet)
+- Installs pip packages for that service only
+- Runs pytest for that service only
 
-**Job 2 — build-and-push (5-8 minutes)**
+**Job 2 — build-and-push (3-5 minutes)**
 - Logs in to your AWS ECR
-- Runs `docker build` for each of the 5 services
-- Pushes each Docker image to ECR tagged with the git commit SHA
+- Builds the Docker image for that service only
+- Pushes it to ECR tagged with the git commit SHA
 
-**Job 3 — deploy (1-2 minutes)**
+**Job 3 — deploy (1 minute)**
 - Connects to your EKS cluster
-- Runs `kubectl set image` for each service to point to the new image
+- Runs `kubectl set image` for that service only
 
-**All three jobs must show a green checkmark.**
+**All three jobs in all 5 workflows must show a green checkmark.**
 
 If any job fails, click on it, then click on the failed step to read the error message.
 
@@ -719,7 +754,7 @@ If any job fails, click on it, then click on the failed step to read the error m
 This means the OIDC trust relationship is not set up correctly.
 Go back to Step 6.5 and check:
 - The condition value exactly matches your GitHub username and repo name
-- There are no typos — it must be `repo:YOUR_USERNAME/ai-code-reviewer:*`
+- There are no typos — it must be `repo:data-guru0/MAJOR-PROJECT-KRISH-SIR:*`
 
 **"Repository does not exist" for ECR**
 
@@ -729,6 +764,18 @@ Go back to the terraform folder and run `terraform apply` again.
 **"error: exec plugin: invalid apiVersion"**
 
 Your kubectl version is incompatible. Download the latest version from https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/
+
+### 13.4 How to redeploy a single service later
+
+When you change only one service, only that service's pipeline runs automatically. For example, if you edit `services/orchestrator/graph.py`:
+
+```
+git add services/orchestrator/graph.py
+git commit -m "fix: improve security agent prompt"
+git push origin main
+```
+
+Only the **Orchestrator CI/CD** pipeline runs. The other 4 services are not touched.
 
 ---
 
