@@ -28,16 +28,24 @@ async def health():
 async def post_review(request: ReviewRequest):
     token = get_installation_token(request.installation_id)
 
-    comments = [
-        {"path": f.get("file"), "line": f.get("line"), "body": f.get("message")}
-        for f in request.findings
-        if f.get("file") and f.get("line") and f.get("message")
-    ]
+    if not request.findings:
+        return {"status": "ok"}
+
+    body_lines = ["## AI Code Review\n"]
+    for f in request.findings:
+        severity = f.get("severity", "info").upper()
+        file_ref = f.get("file", "unknown")
+        line_ref = f.get("line", "?")
+        agent = f.get("agent", "")
+        message = f.get("message", "")
+        body_lines.append(f"**[{severity}]** `{file_ref}:{line_ref}` ({agent})\n{message}\n")
+
+    body = "\n".join(body_lines)
 
     async with httpx.AsyncClient() as client:
         response = await client.post(
             f"https://api.github.com/repos/{request.repo_full_name}/pulls/{request.pr_number}/reviews",
-            json={"event": "COMMENT", "comments": comments},
+            json={"event": "COMMENT", "body": body},
             headers={
                 "Authorization": f"Bearer {token}",
                 "Accept": "application/vnd.github.v3+json",
