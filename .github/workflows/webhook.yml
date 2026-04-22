@@ -55,7 +55,9 @@ jobs:
       - name: Build and push
         run: |
           docker build -t $ECR_REGISTRY/$SERVICE:$GITHUB_SHA -f services/$SERVICE/Dockerfile .
+          docker tag $ECR_REGISTRY/$SERVICE:$GITHUB_SHA $ECR_REGISTRY/$SERVICE:latest
           docker push $ECR_REGISTRY/$SERVICE:$GITHUB_SHA
+          docker push $ECR_REGISTRY/$SERVICE:latest
 
   deploy:
     runs-on: ubuntu-latest

@@ -11,6 +11,8 @@ provider "aws" {
   region = var.region
 }
 
+data "aws_caller_identity" "current" {}
+
 module "vpc" {
   source  = "terraform-aws-modules/vpc/aws"
   version = "~> 5.0"
@@ -42,6 +44,22 @@ module "eks" {
   subnet_ids = module.vpc.public_subnets
 
   cluster_endpoint_public_access = true
+
+  enable_cluster_creator_admin_permissions = true
+
+  access_entries = {
+    github-actions = {
+      principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/github-actions-ai-reviewer"
+      policy_associations = {
+        admin = {
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+  }
 
   eks_managed_node_groups = {
     default = {

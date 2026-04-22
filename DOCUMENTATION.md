@@ -17,10 +17,10 @@ Follow every step in exact order. Do not skip anything.
 | Phase 5 — Create GitHub App | DONE |
 | Phase 6 — LangFuse Setup | DONE |
 | Phase 7 — OpenAI API Key | DONE |
-| Phase 8 — Provision AWS Infrastructure | NEXT |
-| Phase 9 — Configure GitHub Secrets | Pending |
-| Phase 10 — First Deployment via GitHub Actions | Pending |
-| Phase 11 — Connect kubectl to EKS | Pending |
+| Phase 8 — Provision AWS Infrastructure | DONE |
+| Phase 9 — Configure GitHub Secrets | DONE |
+| Phase 10 — First Deployment via GitHub Actions | DONE |
+| Phase 11 — Connect kubectl to EKS | NEXT |
 | Phase 12 — Apply Kubernetes Manifests | Pending |
 | Phase 13 — Set Up Grafana and Prometheus | Pending |
 | Phase 14 — Set Up LangFuse Tracing | Pending |
@@ -649,14 +649,6 @@ For each secret: click "New repository secret", enter the Name and Value, click 
 | `AWS_ROLE_ARN` | the full ARN from Step 6.5 — looks like `arn:aws:iam::123456789012:role/github-actions-ai-reviewer` |
 | `EKS_CLUSTER_NAME` | `ai-code-reviewer` |
 
-**GitHub App secrets — add these 3:**
-
-| Name | Value |
-|---|---|
-| `GITHUB_APP_ID` | the number from Step 8.6 |
-| `GITHUB_APP_PRIVATE_KEY` | open the `.pem` file in Notepad, select all (Ctrl+A), copy (Ctrl+C), paste the entire contents here |
-| `GITHUB_WEBHOOK_SECRET` | the random string you created in Step 8.2 |
-
 **AI secrets — add these 3:**
 
 | Name | Value |
@@ -676,11 +668,15 @@ For the DATABASE_URL value, replace `YOUR_RDS_ENDPOINT` with the `rds_endpoint` 
 Example of what it should look like:
 `postgresql://dbadmin:YourStrongPassword123!@ai-code-reviewer-postgres.abc123.us-east-1.rds.amazonaws.com/codereviewer`
 
-After adding all secrets, you should have 10 secrets total in the list.
+After adding all secrets, you should have 7 secrets total in the list.
+
+Note: GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, and GITHUB_WEBHOOK_SECRET are NOT added here. GitHub blocks secrets starting with GITHUB_. These 3 values go directly into infra/k8s/secret.yaml in Phase 12.
 
 ---
 
 ## 13. Phase 10 — First Deployment via GitHub Actions
+
+> **IMPORTANT:** When you run the pipelines right now, only **test** and **build-and-push** jobs will succeed. The **deploy** job will fail with "deployment not found" — this is expected and normal. The deploy job requires Kubernetes deployments to already exist, which only happens after you complete Phase 12. Once you finish Phase 12, re-run the pipelines and all 3 jobs will pass.
 
 ### How the CI/CD pipelines work (per-service architecture)
 
@@ -882,7 +878,37 @@ kubectl apply -f secret.yaml
 ```
 Expected output: `secret/app-secrets created`
 
-**Step 3 — Run the database migration:**
+**Step 3 — Update the migration job image before applying:**
+
+The `migration-job.yaml` needs the actual Docker image that was built and pushed to ECR during Phase 10. Run this to get the image tag:
+
+```
+aws ecr list-images --repository-name webhook --region us-east-1
+```
+
+You will see output like:
+```
+"imageTag": "a935a8ed94f672a5bc86b9197bd47fab1f805a6a"
+```
+
+Copy that tag and open `infra\k8s\migration-job.yaml` in Notepad:
+```
+notepad "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer\infra\k8s\migration-job.yaml"
+```
+
+Find the line:
+```
+image: IMAGE_TAG
+```
+
+Replace it with your actual ECR image:
+```
+image: 789438508565.dkr.ecr.us-east-1.amazonaws.com/webhook:YOUR_IMAGE_TAG
+```
+
+Replace `YOUR_IMAGE_TAG` with the tag you copied. Save and close Notepad.
+
+Now apply it:
 ```
 kubectl apply -f migration-job.yaml
 ```
