@@ -11,7 +11,7 @@ spec:
       restartPolicy: OnFailure
       containers:
         - name: migrate
-          image: IMAGE_TAG
+          image: 789438508565.dkr.ecr.us-east-1.amazonaws.com/webhook:a935a8ed94f672a5bc86b9197bd47fab1f805a6a
           command: ["alembic", "-c", "/db/alembic.ini", "upgrade", "head"]
           env:
             - name: DATABASE_URL
@@ -34,7 +34,7 @@ metadata:
 data:
   alembic.ini: |
     [alembic]
-    script_location = /app/migrations
+    script_location = /db/migrations
     prepend_sys_path = .
     version_path_separator = os
     sqlalchemy.url = placeholder
