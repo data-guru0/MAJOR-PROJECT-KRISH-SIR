@@ -12,6 +12,10 @@ on:
     paths:
       - "services/orchestrator/**"
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
   SERVICE: orchestrator
