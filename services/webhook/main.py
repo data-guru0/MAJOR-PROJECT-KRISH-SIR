@@ -52,15 +52,25 @@ async def receive_event(request: Request):
     head_sha = pull_request.get("head", {}).get("sha", "")
     installation_id = body.get("installation", {}).get("id", 0)
 
-    pr_record = PullRequest(
-        repo_full_name=repo_full_name,
-        pr_number=pr_number,
-        head_sha=head_sha,
-        installation_id=installation_id,
-        status="pending",
-    )
-
     async with AsyncSessionLocal() as session:
+        from sqlalchemy import select
+        result = await session.execute(
+            select(PullRequest).where(
+                PullRequest.repo_full_name == repo_full_name,
+                PullRequest.pr_number == pr_number,
+                PullRequest.head_sha == head_sha,
+            )
+        )
+        if result.scalar_one_or_none():
+            return {"status": "already_processing"}
+
+        pr_record = PullRequest(
+            repo_full_name=repo_full_name,
+            pr_number=pr_number,
+            head_sha=head_sha,
+            installation_id=installation_id,
+            status="pending",
+        )
         session.add(pr_record)
         await session.commit()
         await session.refresh(pr_record)

@@ -38,7 +38,11 @@ async def post_review(request: ReviewRequest):
         line_ref = f.get("line")
         agent = f.get("agent", "")
         message = f.get("message", "")
-        if file_ref and isinstance(line_ref, int) and line_ref > 0:
+        try:
+            line_ref = int(line_ref) if line_ref is not None else 0
+        except (ValueError, TypeError):
+            line_ref = 0
+        if file_ref and line_ref > 0:
             inline_comments.append({
                 "path": file_ref,
                 "line": line_ref,
