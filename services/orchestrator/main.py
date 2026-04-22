@@ -1,5 +1,6 @@
 import httpx
 from fastapi import FastAPI
+
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
