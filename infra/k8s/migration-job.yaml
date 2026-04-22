@@ -2,16 +2,15 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: db-migrate
-  annotations:
-    argocd.argoproj.io/hook: PreSync
 spec:
   backoffLimit: 3
   template:
     spec:
-      restartPolicy: OnFailure
+      restartPolicy: Never
       containers:
         - name: migrate
           image: 789438508565.dkr.ecr.us-east-1.amazonaws.com/webhook:latest
+          workingDir: /db
           command: ["alembic", "-c", "/db/alembic.ini", "upgrade", "head"]
           env:
             - name: DATABASE_URL
@@ -19,56 +18,3 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: DATABASE_URL
-          volumeMounts:
-            - name: db-config
-              mountPath: /db
-      volumes:
-        - name: db-config
-          configMap:
-            name: alembic-config
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: alembic-config
-data:
-  alembic.ini: |
-    [alembic]
-    script_location = /db/migrations
-    prepend_sys_path = .
-    version_path_separator = os
-    sqlalchemy.url = placeholder
-
-    [loggers]
-    keys = root,sqlalchemy,alembic
-
-    [handlers]
-    keys = console
-
-    [formatters]
-    keys = generic
-
-    [logger_root]
-    level = WARN
-    handlers = console
-    qualname =
-
-    [logger_sqlalchemy]
-    level = WARN
-    handlers =
-    qualname = sqlalchemy.engine
-
-    [logger_alembic]
-    level = INFO
-    handlers =
-    qualname = alembic
-
-    [handler_console]
-    class = StreamHandler
-    args = (sys.stderr,)
-    level = NOTSET
-    formatter = generic
-
-    [formatter_generic]
-    format = %(levelname)-5.5s [%(name)s] %(message)s
-    datefmt = %H:%M:%S

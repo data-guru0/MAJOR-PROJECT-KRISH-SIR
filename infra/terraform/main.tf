@@ -28,6 +28,11 @@ module "vpc" {
   enable_dns_support      = true
   map_public_ip_on_launch = true
 
+  public_subnet_tags = {
+    "kubernetes.io/cluster/${var.cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                    = "1"
+  }
+
   tags = {
     Environment = var.environment
   }
@@ -61,6 +66,25 @@ module "eks" {
     }
   }
 
+  node_security_group_additional_rules = {
+    ingress_nlb_grafana = {
+      description = "Allow NLB to reach Grafana pod"
+      protocol    = "tcp"
+      from_port   = 3000
+      to_port     = 3000
+      type        = "ingress"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+    ingress_nlb_http = {
+      description = "Allow NLB health checks and HTTP traffic"
+      protocol    = "tcp"
+      from_port   = 80
+      to_port     = 80
+      type        = "ingress"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
   eks_managed_node_groups = {
     default = {
       instance_types = ["t3.medium"]
@@ -69,6 +93,54 @@ module "eks" {
       max_size     = 3
       desired_size = 2
     }
+  }
+
+  tags = {
+    Environment = var.environment
+  }
+}
+
+resource "aws_security_group" "rds" {
+  name        = "${var.cluster_name}-rds-sg"
+  description = "Allow PostgreSQL access from within VPC"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Environment = var.environment
+  }
+}
+
+resource "aws_security_group" "elasticache" {
+  name        = "${var.cluster_name}-redis-sg"
+  description = "Allow Redis access from within VPC"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress {
+    from_port   = 6379
+    to_port     = 6379
+    protocol    = "tcp"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
@@ -94,7 +166,8 @@ resource "aws_db_instance" "postgres" {
   publicly_accessible = false
   skip_final_snapshot = true
 
-  db_subnet_group_name = aws_db_subnet_group.main.name
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
 
   tags = {
     Environment = var.environment
@@ -114,11 +187,56 @@ resource "aws_elasticache_cluster" "redis" {
   num_cache_nodes      = 1
   parameter_group_name = "default.redis7"
 
-  subnet_group_name = aws_elasticache_subnet_group.main.name
+  subnet_group_name  = aws_elasticache_subnet_group.main.name
+  security_group_ids = [aws_security_group.elasticache.id]
 
   tags = {
     Environment = var.environment
   }
+}
+
+resource "aws_iam_policy" "lbc" {
+  name        = "${var.cluster_name}-lbc-policy"
+  description = "IAM policy for AWS Load Balancer Controller"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect   = "Allow"
+        Action   = [
+          "elasticloadbalancing:*",
+          "ec2:CreateSecurityGroup",
+          "ec2:DeleteSecurityGroup",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:RevokeSecurityGroupEgress",
+          "ec2:Describe*",
+          "ec2:CreateTags",
+          "ec2:DeleteTags",
+          "iam:CreateServiceLinkedRole",
+          "cognito-idp:DescribeUserPoolClient",
+          "acm:ListCertificates",
+          "acm:DescribeCertificate",
+          "wafv2:GetWebACL",
+          "wafv2:GetWebACLForResource",
+          "wafv2:AssociateWebACL",
+          "wafv2:DisassociateWebACL",
+          "shield:GetSubscriptionState",
+          "shield:DescribeProtection",
+          "shield:CreateProtection",
+          "shield:DeleteProtection"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lbc" {
+  policy_arn = aws_iam_policy.lbc.arn
+  role       = module.eks.eks_managed_node_groups["default"].iam_role_name
 }
 
 resource "aws_s3_bucket" "reports" {

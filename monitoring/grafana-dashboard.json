@@ -82,7 +82,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"gateway\"}[1m])) by (method, handler, status)",
+          "expr": "sum(rate(http_requests_total{app=\"gateway\"}[5m])) by (method, handler, status)",
           "legendFormat": "{{method}} {{handler}} {{status}}"
         }
       ]
@@ -102,12 +102,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"gateway\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"gateway\"}[5m])) by (le))",
           "legendFormat": "p99"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"gateway\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"gateway\"}[5m])) by (le))",
           "legendFormat": "p50"
         }
       ]
@@ -127,7 +127,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"gateway\", status=~\"5..\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{app=\"gateway\", status=~\"5..\"}[5m]))",
           "legendFormat": "5xx errors"
         }
       ]
@@ -154,7 +154,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"webhook\"}[1m])) by (method, handler, status)",
+          "expr": "sum(rate(http_requests_total{app=\"webhook\"}[5m])) by (method, handler, status)",
           "legendFormat": "{{method}} {{handler}} {{status}}"
         }
       ]
@@ -174,12 +174,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"webhook\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"webhook\"}[5m])) by (le))",
           "legendFormat": "p99"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"webhook\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"webhook\"}[5m])) by (le))",
           "legendFormat": "p50"
         }
       ]
@@ -199,7 +199,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"webhook\", status=~\"5..\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{app=\"webhook\", status=~\"5..\"}[5m]))",
           "legendFormat": "5xx errors"
         }
       ]
@@ -226,7 +226,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"orchestrator\"}[1m])) by (method, handler, status)",
+          "expr": "sum(rate(http_requests_total{app=\"orchestrator\"}[5m])) by (method, handler, status)",
           "legendFormat": "{{method}} {{handler}} {{status}}"
         }
       ]
@@ -246,12 +246,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"orchestrator\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"orchestrator\"}[5m])) by (le))",
           "legendFormat": "p99"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"orchestrator\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"orchestrator\"}[5m])) by (le))",
           "legendFormat": "p50"
         }
       ]
@@ -271,7 +271,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"orchestrator\", status=~\"5..\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{app=\"orchestrator\", status=~\"5..\"}[5m]))",
           "legendFormat": "5xx errors"
         }
       ]
@@ -298,7 +298,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"reviewer\"}[1m])) by (method, handler, status)",
+          "expr": "sum(rate(http_requests_total{app=\"reviewer\"}[5m])) by (method, handler, status)",
           "legendFormat": "{{method}} {{handler}} {{status}}"
         }
       ]
@@ -318,12 +318,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"reviewer\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"reviewer\"}[5m])) by (le))",
           "legendFormat": "p99"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"reviewer\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"reviewer\"}[5m])) by (le))",
           "legendFormat": "p50"
         }
       ]
@@ -343,7 +343,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"reviewer\", status=~\"5..\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{app=\"reviewer\", status=~\"5..\"}[5m]))",
           "legendFormat": "5xx errors"
         }
       ]
@@ -370,7 +370,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"learner\"}[1m])) by (method, handler, status)",
+          "expr": "sum(rate(http_requests_total{app=\"learner\"}[5m])) by (method, handler, status)",
           "legendFormat": "{{method}} {{handler}} {{status}}"
         }
       ]
@@ -390,12 +390,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"learner\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=\"learner\"}[5m])) by (le))",
           "legendFormat": "p99"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"learner\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{app=\"learner\"}[5m])) by (le))",
           "legendFormat": "p50"
         }
       ]
@@ -415,7 +415,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=\"learner\", status=~\"5..\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{app=\"learner\", status=~\"5..\"}[5m]))",
           "legendFormat": "5xx errors"
         }
       ]
@@ -450,7 +450,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=~\"gateway|webhook|orchestrator|reviewer|learner\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{app=~\"gateway|webhook|orchestrator|reviewer|learner\"}[5m]))",
           "legendFormat": "req/s"
         }
       ]
@@ -477,7 +477,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "sum(rate(http_requests_total{app=~\"gateway|webhook|orchestrator|reviewer|learner\", status=~\"5..\"}[1m]))",
+          "expr": "sum(rate(http_requests_total{app=~\"gateway|webhook|orchestrator|reviewer|learner\", status=~\"5..\"}[5m]))",
           "legendFormat": "5xx/s"
         }
       ]
@@ -505,7 +505,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=~\"gateway|webhook|orchestrator|reviewer|learner\"}[1m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{app=~\"gateway|webhook|orchestrator|reviewer|learner\"}[5m])) by (le))",
           "legendFormat": "p99"
         }
       ]
