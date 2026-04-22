@@ -53,7 +53,17 @@ async def post_review(request: ReviewRequest):
     url = f"https://api.github.com/repos/{request.repo_full_name}/pulls/{request.pr_number}/reviews"
 
     async with httpx.AsyncClient() as client:
-        payload = {"event": "COMMENT", "body": "## AI Code Review", "comments": inline_comments}
+        summary_lines = ["## AI Code Review\n"]
+        for f in request.findings:
+            severity = f.get("severity", "info").upper()
+            file_ref = f.get("file", "unknown")
+            line_ref = f.get("line", "?")
+            agent = f.get("agent", "")
+            message = f.get("message", "")
+            summary_lines.append(f"**[{severity}]** `{file_ref}:{line_ref}` ({agent})\n{message}\n")
+        summary_body = "\n".join(summary_lines)
+
+        payload = {"event": "COMMENT", "body": summary_body, "comments": inline_comments}
         response = await client.post(url, json=payload, headers=headers, timeout=30)
 
         if response.status_code == 422 and inline_comments:
