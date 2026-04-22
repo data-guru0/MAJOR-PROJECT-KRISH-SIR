@@ -20,12 +20,12 @@ Follow every step in exact order. Do not skip anything.
 | Phase 8 — Provision AWS Infrastructure | DONE |
 | Phase 9 — Configure GitHub Secrets | DONE |
 | Phase 10 — First Deployment via GitHub Actions | DONE |
-| Phase 11 — Connect kubectl to EKS | NEXT |
-| Phase 12 — Apply Kubernetes Manifests | Pending |
-| Phase 13 — Set Up Grafana and Prometheus | Pending |
-| Phase 14 — Set Up LangFuse Tracing | Pending |
-| Phase 15 — Update GitHub App Webhook URL | Pending |
-| Phase 16 — End-to-End Test | Pending |
+| Phase 11 — Connect kubectl to EKS | DONE |
+| Phase 12 — Apply Kubernetes Manifests | DONE |
+| Phase 13 — Set Up Grafana and Prometheus | DONE |
+| Phase 14 — Set Up LangFuse Tracing | DONE |
+| Phase 15 — Update GitHub App Webhook URL | DONE |
+| Phase 16 — End-to-End Test | DONE |
 
 ---
 
@@ -649,28 +649,24 @@ For each secret: click "New repository secret", enter the Name and Value, click 
 | `AWS_ROLE_ARN` | the full ARN from Step 6.5 — looks like `arn:aws:iam::123456789012:role/github-actions-ai-reviewer` |
 | `EKS_CLUSTER_NAME` | `ai-code-reviewer` |
 
-**AI secrets — add these 3:**
+**AI secrets — add these 2:**
 
-| Name | Value |
-|---|---|
-| `OPENAI_API_KEY` | your OpenAI key from Phase 7 |
-| `LANGFUSE_PUBLIC_KEY` | your LangFuse public key from Phase 6 |
-| `LANGFUSE_SECRET_KEY` | your LangFuse secret key from Phase 6 |
+| Name | Value | Used by |
+|---|---|---|
+| `OPENAI_API_KEY` | your OpenAI key from Phase 7 | Weekly evaluate.yml job |
+| `DATABASE_URL` | `postgresql://dbadmin:YourStrongPassword123!@YOUR_RDS_ENDPOINT/codereviewer` | Weekly evaluate.yml job |
 
-**Database secret — add this 1:**
+For the `DATABASE_URL` value, replace `YOUR_RDS_ENDPOINT` with the `rds_endpoint` value from your Terraform output. Remove the `:5432` from the end if it is already included.
 
-| Name | Value |
-|---|---|
-| `DATABASE_URL` | `postgresql://dbadmin:YourStrongPassword123!@YOUR_RDS_ENDPOINT/codereviewer` |
-
-For the DATABASE_URL value, replace `YOUR_RDS_ENDPOINT` with the `rds_endpoint` value from your Terraform output. Remove the `:5432` from the end of the endpoint if it is already there in the terraform output — do not duplicate the port.
-
-Example of what it should look like:
+Example:
 `postgresql://dbadmin:YourStrongPassword123!@ai-code-reviewer-postgres.abc123.us-east-1.rds.amazonaws.com/codereviewer`
 
-After adding all secrets, you should have 7 secrets total in the list.
+After adding all secrets, you should have **5 secrets** total: `AWS_ACCOUNT_ID`, `AWS_ROLE_ARN`, `EKS_CLUSTER_NAME`, `OPENAI_API_KEY`, `DATABASE_URL`.
 
-Note: GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY, and GITHUB_WEBHOOK_SECRET are NOT added here. GitHub blocks secrets starting with GITHUB_. These 3 values go directly into infra/k8s/secret.yaml in Phase 12.
+> **Important — what does NOT go here:**
+> - `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` are NOT GitHub Actions secrets. No pipeline uses them. They go only into `infra/k8s/secret.yaml` in Phase 12 so Kubernetes pods can read them at runtime.
+> - `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, `GITHUB_WEBHOOK_SECRET` also go only into `secret.yaml` — GitHub blocks secrets starting with `GITHUB_` in Actions.
+> - The pipelines only build Docker images and run `kubectl set image`. They never create or update the Kubernetes secret. That is done once manually in Phase 12.
 
 ---
 
@@ -761,7 +757,37 @@ Go back to the terraform folder and run `terraform apply` again.
 
 Your kubectl version is incompatible. Download the latest version from https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/
 
-### 13.4 How to redeploy a single service later
+### 13.4 Re-trigger all 5 pipelines after Phase 12 is complete
+
+After you finish Phase 12 (applying all Kubernetes manifests), you must re-run all 5 pipelines so the deploy job can execute successfully. The deploy job requires the Kubernetes deployments to already exist.
+
+Each service folder has a `deploy.txt` file specifically for this purpose. Increment the number inside it to trigger pipelines without touching any actual code:
+
+```
+cd "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer"
+```
+
+```
+echo 2 > services\gateway\deploy.txt && echo 2 > services\webhook\deploy.txt && echo 2 > services\orchestrator\deploy.txt && echo 2 > services\reviewer\deploy.txt && echo 2 > services\learner\deploy.txt
+```
+
+```
+git add services\
+```
+
+```
+git commit -m "deploy: trigger all 5 pipelines after k8s setup"
+```
+
+```
+git push origin main
+```
+
+Next time you need to trigger again, use `echo 3 >`, then `echo 4 >`, etc.
+
+Go to GitHub → Actions tab and wait for all 3 jobs (test → build-and-push → deploy) in all 5 pipelines to show green checkmarks.
+
+### 13.5 How to redeploy a single service later
 
 When you change only one service, only that service's pipeline runs automatically. For example, if you edit `services/orchestrator/graph.py`:
 
@@ -818,7 +844,44 @@ If you see "no server found" or connection refused, your `aws configure` credent
 
 This deploys all your services onto the EKS cluster.
 
-### 15.1 Fill in the Kubernetes secret file
+### 15.1 Update the ConfigMap with your real Redis URL
+
+**Why this matters:** The `configmap.yaml` file has a placeholder Redis URL. If you skip this step, all services will fail to connect to Redis (ElastiCache) and the entire system will return 500 errors silently.
+
+First get your Redis endpoint from Terraform:
+```
+cd "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer\infra\terraform"
+terraform output
+```
+
+Copy the `redis_endpoint` value. It looks like:
+```
+ai-code-reviewer-redis.khmhzg.0001.use1.cache.amazonaws.com:6379
+```
+
+Now open the ConfigMap file:
+```
+notepad "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer\infra\k8s\configmap.yaml"
+```
+
+Find this line:
+```
+REDIS_URL: "redis://redis:6379/0"
+```
+
+Replace it with your actual endpoint (remove the `:6379` from the endpoint since it's already in the URL):
+```
+REDIS_URL: "redis://YOUR_REDIS_ENDPOINT:6379/0"
+```
+
+Example:
+```
+REDIS_URL: "redis://ai-code-reviewer-redis.khmhzg.0001.use1.cache.amazonaws.com:6379/0"
+```
+
+Save the file.
+
+### 15.2 Fill in the Kubernetes secret file
 
 You need to open and edit `infra\k8s\secret.yaml` with your actual secret values.
 
@@ -878,37 +941,11 @@ kubectl apply -f secret.yaml
 ```
 Expected output: `secret/app-secrets created`
 
-**Step 3 — Update the migration job image before applying:**
+**Step 3 — Run the database migration:**
 
-The `migration-job.yaml` needs the actual Docker image that was built and pushed to ECR during Phase 10. Run this to get the image tag:
+The `migration-job.yaml` always uses the `latest` tag which is automatically pushed by the webhook pipeline on every deployment. No manual changes needed.
 
-```
-aws ecr list-images --repository-name webhook --region us-east-1
-```
-
-You will see output like:
-```
-"imageTag": "a935a8ed94f672a5bc86b9197bd47fab1f805a6a"
-```
-
-Copy that tag and open `infra\k8s\migration-job.yaml` in Notepad:
-```
-notepad "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer\infra\k8s\migration-job.yaml"
-```
-
-Find the line:
-```
-image: IMAGE_TAG
-```
-
-Replace it with your actual ECR image:
-```
-image: 789438508565.dkr.ecr.us-east-1.amazonaws.com/webhook:YOUR_IMAGE_TAG
-```
-
-Replace `YOUR_IMAGE_TAG` with the tag you copied. Save and close Notepad.
-
-Now apply it:
+Just apply it directly:
 ```
 kubectl apply -f migration-job.yaml
 ```
@@ -945,7 +982,27 @@ kubectl apply -f learner-worker.yaml
 kubectl apply -f hpa.yaml
 ```
 
-**Step 7 — Apply the ingress (creates your public URL):**
+**Step 7 — Install AWS Load Balancer Controller (required for ingress):**
+
+This controller is what creates the AWS ALB from your ingress definition. Without it the ingress will have no ADDRESS forever.
+
+```
+helm repo add eks https://aws.github.io/eks-charts
+helm repo update
+```
+
+```
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller -n kube-system --set clusterName=ai-code-reviewer --set serviceAccount.create=true
+```
+
+Wait 2 minutes for the controller to start:
+```
+kubectl get pods -n kube-system
+```
+
+All pods should show `Running`.
+
+**Step 8 — Apply the ingress (creates your public URL):**
 ```
 kubectl apply -f ingress.yaml
 ```
@@ -992,6 +1049,8 @@ gateway-ingress   alb     *       k8s-default-gateway-abc123.us-east-1.elb.amazo
 Copy the ADDRESS value and save it. This is your system's public URL.
 Your full webhook endpoint is: `https://ADDRESS/webhook/github`
 
+Note: If ADDRESS is empty, wait 3-5 minutes and run the command again. The ALB takes time to provision.
+
 ---
 
 ## 16. Phase 13 — Set Up Grafana and Prometheus
@@ -1014,10 +1073,67 @@ helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 ```
 
-### 16.2 Install Prometheus
+### 16.2 Install EBS CSI Driver (required for Prometheus storage)
 
+Prometheus needs persistent storage. EKS requires the EBS CSI driver to provision EBS volumes for pods.
+
+**Step 1 — Get your node group role name:**
 ```
-helm install prometheus prometheus-community/prometheus --namespace monitoring --create-namespace --set server.persistentVolume.size=8Gi
+aws eks list-nodegroups --cluster-name ai-code-reviewer --region us-east-1
+```
+```
+aws eks describe-nodegroup --cluster-name ai-code-reviewer --nodegroup-name YOUR_NODEGROUP_NAME --region us-east-1
+```
+Look for the `nodeRole` field — copy just the role name after the last `/`. It looks like `default-eks-node-group-XXXXXXXXXXXX`.
+
+**Step 2 — Attach the EBS CSI policy to the node group role:**
+
+**Windows CMD:**
+```
+aws iam attach-role-policy ^
+  --role-name YOUR_NODE_ROLE_NAME ^
+  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+```
+
+**Mac/Linux:**
+```
+aws iam attach-role-policy \
+  --role-name YOUR_NODE_ROLE_NAME \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+```
+
+**Step 3 — Install the EBS CSI driver addon:**
+```
+aws eks create-addon --cluster-name ai-code-reviewer --addon-name aws-ebs-csi-driver --region us-east-1
+```
+
+**Step 4 — Wait until it shows ACTIVE:**
+```
+aws eks describe-addon --cluster-name ai-code-reviewer --addon-name aws-ebs-csi-driver --region us-east-1 --query addon.status --output text
+```
+
+Run Step 4 every minute until it shows `ACTIVE` before proceeding.
+
+Wait until output shows `"ACTIVE"` before proceeding.
+
+### 16.3 Install Prometheus
+
+**Windows CMD:**
+```
+helm install prometheus prometheus-community/prometheus ^
+  --namespace monitoring --create-namespace ^
+  --set server.persistentVolume.size=8Gi ^
+  --set server.persistentVolume.storageClass=gp2 ^
+  --set alertmanager.persistence.storageClass=gp2
+```
+
+**Mac/Linux:**
+```
+helm install prometheus prometheus-community/prometheus \
+  --namespace monitoring --create-namespace \
+  --set server.persistentVolume.size=8Gi \
+  --set server.persistentVolume.storageClass=gp2 \
+  --set alertmanager.persistence.storageClass=gp2
 ```
 
 This installs Prometheus in a new namespace called `monitoring`. Wait about 2 minutes.
@@ -1029,7 +1145,7 @@ kubectl get pods -n monitoring
 
 All pods should show `Running`. It may take a few minutes.
 
-### 16.3 Apply your Prometheus scrape config
+### 16.4 Apply your Prometheus scrape config
 
 Your project already has a config file that tells Prometheus where to find all 5 services. Apply it:
 
@@ -1037,13 +1153,48 @@ Your project already has a config file that tells Prometheus where to find all 5
 kubectl create configmap prometheus-config --from-file=prometheus.yml="D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer\monitoring\prometheus.yml" -n monitoring --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-### 16.4 Install Grafana
+### 16.5 Install Grafana
 
+Grafana needs NLB annotations so the AWS Load Balancer Controller assigns it a public IP. Without these annotations the EXTERNAL-IP stays `<pending>` forever.
+
+If Grafana is already installed from a previous attempt, uninstall it first:
 ```
-helm install grafana grafana/grafana --namespace monitoring --set persistence.enabled=true --set persistence.size=5Gi --set service.type=LoadBalancer
+helm uninstall grafana -n monitoring
 ```
 
-### 16.5 Get the Grafana admin password
+**Windows CMD:**
+```
+helm install grafana grafana/grafana ^
+  --namespace monitoring ^
+  --set persistence.enabled=true ^
+  --set persistence.size=5Gi ^
+  --set persistence.storageClassName=gp2 ^
+  --set service.type=LoadBalancer ^
+  --set "service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type=external" ^
+  --set "service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-nlb-target-type=ip" ^
+  --set "service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-scheme=internet-facing"
+```
+
+**Mac/Linux:**
+```
+helm install grafana grafana/grafana \
+  --namespace monitoring \
+  --set persistence.enabled=true \
+  --set persistence.size=5Gi \
+  --set persistence.storageClassName=gp2 \
+  --set service.type=LoadBalancer \
+  --set "service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-type=external" \
+  --set "service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-nlb-target-type=ip" \
+  --set "service.annotations.service\.beta\.kubernetes\.io/aws-load-balancer-scheme=internet-facing"
+```
+
+Wait 2-3 minutes then check:
+```
+kubectl get svc grafana -n monitoring
+```
+The EXTERNAL-IP column shows a URL when the NLB is ready.
+
+### 16.6 Get the Grafana admin password
 
 Run this command — it will print the password in your CMD window:
 
@@ -1058,7 +1209,7 @@ kubectl get secret --namespace monitoring grafana -o jsonpath="{.data.admin-pass
 
 Save the password that gets printed. The username is always `admin`.
 
-### 16.6 Get the Grafana URL
+### 16.7 Get the Grafana URL
 
 ```
 kubectl get svc -n monitoring grafana
@@ -1067,7 +1218,7 @@ kubectl get svc -n monitoring grafana
 Wait 2-3 minutes. The EXTERNAL-IP column will show a URL like `xxx.us-east-1.elb.amazonaws.com`.
 Open your browser and go to: `http://EXTERNAL-IP`
 
-### 16.7 Log in to Grafana
+### 16.8 Log in to Grafana
 
 1. Open the Grafana URL in Chrome or any browser
 2. You will see a login page
@@ -1075,7 +1226,7 @@ Open your browser and go to: `http://EXTERNAL-IP`
 4. Password: the one you got in step 16.5
 5. You will be asked to change your password — set a new one and save it
 
-### 16.8 Add Prometheus as a data source
+### 16.9 Add Prometheus as a data source
 
 1. In Grafana, look at the left sidebar and click the gear icon (Configuration)
 2. Click "Data sources"
@@ -1085,7 +1236,7 @@ Open your browser and go to: `http://EXTERNAL-IP`
 6. Scroll down and click "Save & Test"
 7. You should see a green message: "Data source is working"
 
-### 16.9 Import your pre-built dashboard
+### 16.10 Import your pre-built dashboard
 
 Your project already has a complete Grafana dashboard saved as a JSON file.
 
@@ -1107,35 +1258,70 @@ The dashboard updates automatically every 30 seconds.
 
 ## 17. Phase 14 — Set Up LangFuse Tracing
 
-No setup needed in the code — LangFuse is already wired in. Every OpenAI call made by the orchestrator is automatically recorded.
+LangFuse is already wired into the orchestrator code. You need to point it at the correct host and make sure the keys in the Kubernetes secret are valid.
 
-### 17.1 Open the LangFuse dashboard
+### 17.1 Check your LangFuse region
 
-1. Go to https://cloud.langfuse.com
-2. Log in
-3. Click on your `ai-code-reviewer` project
+LangFuse has two regions. Log in at https://langfuse.com and check the URL your browser shows after login:
+- `cloud.langfuse.com` → you are on the **EU** region
+- `us.cloud.langfuse.com` → you are on the **US** region
 
-### 17.2 What you will see after the first PR is analyzed
+### 17.2 Update configmap.yaml with the correct host
 
-Once a PR triggers your system, go to LangFuse and you will see:
+Open `infra/k8s/configmap.yaml` and set `LANGFUSE_HOST` to match your region:
 
-- **Traces** (left sidebar) — one entry per PR that was analyzed. Click any trace to expand it.
-- Inside a trace you will see 4 spans running in parallel:
-  - `static_analysis` — sent diff to GPT, got back a JSON array of code complexity issues
-  - `security` — sent diff to GPT, got back security vulnerabilities found
-  - `style` — sent diff + past patterns to GPT, got back style issues
-  - `architecture` — sent diff to GPT, got back architecture concerns
-- Click any span to see the exact prompt that was sent and the exact response that came back
-- You can see token count, cost in dollars, and latency for each call
+**EU:**
+```yaml
+LANGFUSE_HOST: "https://cloud.langfuse.com"
+```
 
-### 17.3 How to use it for debugging
+**US:**
+```yaml
+LANGFUSE_HOST: "https://us.cloud.langfuse.com"
+```
 
-If the bot is posting weird or irrelevant comments on PRs:
-1. Go to LangFuse → Traces
-2. Find the trace for that PR
-3. Click on each span to read what the AI responded with
-4. If the response is poorly formatted JSON, the issue is in parsing
-5. If the response is irrelevant, the prompt needs tuning
+Save the file, then apply it and restart the orchestrator:
+```
+kubectl apply -f infra/k8s/configmap.yaml
+kubectl rollout restart deployment orchestrator
+```
+
+### 17.3 Verify the Langfuse keys in the Kubernetes secret
+
+The keys are stored in the Kubernetes secret `app-secrets` (set during Phase 12). They are NOT read from GitHub Actions secrets — the pipeline never touches `app-secrets`.
+
+If you generated new LangFuse keys after Phase 12, you must update the secret manually:
+```
+kubectl get secret app-secrets -o jsonpath='{.data.LANGFUSE_PUBLIC_KEY}' | base64 --decode
+```
+
+If the key shown is wrong, update it:
+```
+kubectl create secret generic app-secrets --dry-run=client -o yaml ^
+  --from-literal=LANGFUSE_PUBLIC_KEY=pk-lf-YOUR-KEY ^
+  --from-literal=LANGFUSE_SECRET_KEY=sk-lf-YOUR-KEY ^
+  | kubectl apply -f -
+kubectl rollout restart deployment orchestrator
+```
+
+### 17.4 Verify traces are appearing
+
+After opening a PR, check orchestrator logs for errors:
+```
+kubectl logs -l app=orchestrator --tail=50 | grep -i "langfuse\|401\|export"
+```
+
+`Failed to export span batch code: 401` means either wrong keys or wrong host region. Fix using 17.2 and 17.3.
+
+### 17.5 Open the LangFuse dashboard
+
+Go to your region URL and log in → click your `ai-code-reviewer` project → **Traces** in the left sidebar.
+
+After a PR is analyzed you will see:
+- One trace per PR
+- 4 spans inside each trace running in parallel (static_analysis, security, style, architecture)
+- Exact prompt sent and response received per span
+- Token count, cost, and latency per call
 
 ---
 
@@ -1145,14 +1331,28 @@ Now that your system is deployed and you have a public URL, you need to tell Git
 
 ### 18.1 Update the webhook URL in your GitHub App
 
+First get your ingress address:
+```
+kubectl get ingress gateway-ingress
+```
+
+Your current ingress address is:
+```
+k8s-default-gatewayi-d0c66c7699-299311758.us-east-1.elb.amazonaws.com
+```
+
+Your full webhook URL is:
+```
+http://k8s-default-gatewayi-d0c66c7699-299311758.us-east-1.elb.amazonaws.com/webhook/github
+```
+
+Now update the GitHub App:
 1. Go to GitHub → click your profile picture → Settings
 2. Left sidebar → "Developer settings" → "GitHub Apps"
 3. Click "Edit" next to `ai-code-reviewer-bot`
 4. Find the "Webhook URL" field
 5. Delete `https://placeholder.com`
-6. Enter your real URL:
-   `https://YOUR_INGRESS_ADDRESS/webhook/github`
-   (Replace YOUR_INGRESS_ADDRESS with the ADDRESS value you saved in Step 15.5)
+6. Enter: `http://k8s-default-gatewayi-d0c66c7699-299311758.us-east-1.elb.amazonaws.com/webhook/github`
 7. The "Webhook secret" field should still have the value you set in Step 8.2 — do not change it
 8. Click "Save changes"
 
@@ -1162,71 +1362,90 @@ Your system is now fully connected. GitHub will send events to your running serv
 
 ## 19. Phase 16 — End-to-End Test
 
-Test the entire system by opening a real Pull Request.
+### 19.1 Install the GitHub App on your test repository
 
-### 19.1 Create a test repository or use an existing one
+The GitHub App must be installed on whichever repository you want the bot to review.
 
-The GitHub App must be installed on the repository. You installed it in Step 8.7.
-Use one of those repositories, or install the app on another repo:
-- Go to GitHub → Settings → Developer settings → GitHub Apps → ai-code-reviewer-bot → Install App → Install on more repositories
+1. Go to GitHub → click your profile picture → **Settings**
+2. Left sidebar → **Developer settings** → **GitHub Apps**
+3. Click **Edit** next to `ai-code-reviewer-bot`
+4. Left sidebar → click **Install App**
+5. Click **Install** next to your account
+6. Select **Only select repositories**
+7. Choose the repository you want to test with (e.g. `gmail-ai-analyze`)
+8. Click **Install**
 
-### 19.2 Open a test Pull Request
+### 19.2 Make sure all pods are Running
 
-In CMD, navigate to any repository where the app is installed:
-
-```
-git checkout -b test/ai-review-test
-```
-
-Create a simple test file:
-
-```
-echo def add(a, b): return a+b > test_math.py
-```
+Before testing, confirm every service is up:
 
 ```
-git add test_math.py
+kubectl get pods
+```
+
+All pods must show `Running`. If any show `Pending` or `CrashLoopBackOff`, wait and run again.
+
+### 19.3 Trigger all 5 pipelines and wait for green
+
+Increment the deploy.txt files to trigger all pipelines:
+
+```
+cd "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer"
 ```
 
 ```
-git commit -m "test: add math function for AI review"
+echo 2 > services\gateway\deploy.txt && echo 2 > services\webhook\deploy.txt && echo 2 > services\orchestrator\deploy.txt && echo 2 > services\reviewer\deploy.txt && echo 2 > services\learner\deploy.txt
 ```
 
 ```
-git push origin test/ai-review-test
+git add services\
+git commit -m "deploy: trigger all pipelines for end-to-end test"
+git push origin main
 ```
 
-Now go to that repository on GitHub and open a Pull Request from the `test/ai-review-test` branch.
+Go to GitHub → **Actions** tab. Wait until all 5 pipelines show green checkmarks on all 3 jobs (test → build-and-push → deploy).
 
-### 19.3 Watch it happen in real time
-
-Open three separate CMD windows and run one command in each:
-
-**CMD Window 1 — Gateway logs:**
+Then run again and confirm all pods are `Running`:
 ```
-kubectl logs -l app=gateway -f
+kubectl get pods
 ```
 
-**CMD Window 2 — Orchestrator logs:**
-```
-kubectl logs -l app=orchestrator -f
-```
+### 19.4 Create a branch and open a Pull Request on your test repository
 
-**CMD Window 3 — Reviewer logs:**
+Do everything directly on the GitHub website — no CMD needed.
+
+**Step 1 — Go to your test repository on GitHub**
+(e.g. `https://github.com/YOUR_USERNAME/gmail-ai-analyze`)
+
+**Step 2 — Create a new branch:**
+1. Click the branch dropdown at the top left (shows `main`)
+2. Type `test-ai-review` in the box
+3. Click **"Create branch: test-ai-review"**
+
+**Step 3 — Create a test file:**
+1. Make sure you are on the `test-ai-review` branch
+2. Click **"Add file"** → **"Create new file"**
+3. Name the file `test_code.py`
+4. Paste this code into the editor:
+```python
+def calculate(a,b):
+    password = "admin123"
+    result = eval(a+b)
+    return result
 ```
-kubectl logs -l app=reviewer -f
-```
+5. Click **"Commit changes"** → **"Commit directly to test-ai-review branch"** → **"Commit changes"**
 
-Within 30 to 60 seconds of opening the PR you should see:
-- CMD 1: a POST request from GitHub coming in and being verified
-- CMD 2: the diff being fetched, the 4 AI agents running
-- CMD 3: the review being posted to GitHub
+**Step 4 — Open a Pull Request:**
+1. GitHub will show a yellow banner **"Compare & pull request"** — click it
+2. Click **"Create pull request"**
 
-### 19.4 Check the Pull Request on GitHub
+**Step 5 — Wait 30-60 seconds**
 
-Go to the Pull Request you just opened.
-Scroll down to the "Files changed" tab.
-You should see inline comments posted by `ai-code-reviewer-bot` on specific lines.
+The bot `ai-code-reviewer-bot` will automatically post review comments on the PR.
+
+**Step 6 — Check for comments:**
+1. Click the **"Files changed"** tab on the PR
+2. You should see inline comments from `ai-code-reviewer-bot` pointing out issues like hardcoded password and dangerous use of `eval()`
 
 If comments appear — your system is working end-to-end.
 
@@ -1277,7 +1496,10 @@ Press Ctrl+C in the CMD window when you want to stop the port-forward.
 ### LangFuse — AI Call Tracing
 
 **How to open:**
-Go to https://cloud.langfuse.com and log in. Click on the `ai-code-reviewer` project.
+- EU accounts: https://cloud.langfuse.com
+- US accounts: https://us.cloud.langfuse.com
+
+Log in and click on the `ai-code-reviewer` project.
 
 **Key sections:**
 - **Traces** — one entry per PR analyzed. Shows the full timeline of all 4 agent calls.
@@ -1535,7 +1757,8 @@ Open Prometheus:
   (keep CMD window open while using it)
 
 Open LangFuse:
-  Go to: https://cloud.langfuse.com
+  EU: https://cloud.langfuse.com
+  US: https://us.cloud.langfuse.com
 
 Check all pods:
   kubectl get pods
