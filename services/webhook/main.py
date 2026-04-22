@@ -1,9 +1,8 @@
 from fastapi import FastAPI, Request
-
 from prometheus_fastapi_instrumentator import Instrumentator
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-import uuid
 
 from models import Settings, PullRequest, Base
 from worker import analyze_pr, trigger_learning
@@ -24,7 +23,6 @@ async def health():
 @app.post("/events", status_code=202)
 async def receive_event(request: Request):
     body = await request.json()
-
     action = body.get("action", "")
     pull_request = body.get("pull_request", {})
 
@@ -32,7 +30,6 @@ async def receive_event(request: Request):
         pr_number = pull_request.get("number")
         repo_full_name = body.get("repository", {}).get("full_name", "")
         async with AsyncSessionLocal() as session:
-            from sqlalchemy import select
             result = await session.execute(
                 select(PullRequest).where(
                     PullRequest.repo_full_name == repo_full_name,
@@ -53,7 +50,6 @@ async def receive_event(request: Request):
     installation_id = body.get("installation", {}).get("id", 0)
 
     async with AsyncSessionLocal() as session:
-        from sqlalchemy import select
         result = await session.execute(
             select(PullRequest).where(
                 PullRequest.repo_full_name == repo_full_name,
@@ -77,5 +73,4 @@ async def receive_event(request: Request):
         pr_id = str(pr_record.id)
 
     analyze_pr.apply_async(args=[pr_id, pr_number, repo_full_name, head_sha, installation_id], queue="webhook")
-
     return {"status": "accepted"}

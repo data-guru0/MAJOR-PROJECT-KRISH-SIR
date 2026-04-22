@@ -1,7 +1,6 @@
 import time
 
 import httpx
-
 import jwt
 from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -24,6 +23,16 @@ async def health():
     return {"status": "ok"}
 
 
+def _finding_summary_line(f: dict) -> str:
+    severity = f.get("severity", "info").upper()
+    return f"**[{severity}]** `{f.get('file', 'unknown')}:{f.get('line', '?')}` ({f.get('agent', '')})\n{f.get('message', '')}\n"
+
+
+def _build_summary(findings: list) -> str:
+    lines = ["## AI Code Review\n"] + [_finding_summary_line(f) for f in findings]
+    return "\n".join(lines)
+
+
 @app.post("/post-review")
 async def post_review(request: ReviewRequest):
     token = get_installation_token(request.installation_id)
@@ -33,21 +42,16 @@ async def post_review(request: ReviewRequest):
 
     inline_comments = []
     for f in request.findings:
-        severity = f.get("severity", "info").upper()
-        file_ref = f.get("file", "")
-        line_ref = f.get("line")
-        agent = f.get("agent", "")
-        message = f.get("message", "")
         try:
-            line_ref = int(line_ref) if line_ref is not None else 0
+            line = int(f.get("line") or 0)
         except (ValueError, TypeError):
-            line_ref = 0
-        if file_ref and line_ref > 0:
+            line = 0
+        if f.get("file") and line > 0:
             inline_comments.append({
-                "path": file_ref,
-                "line": line_ref,
+                "path": f.get("file"),
+                "line": line,
                 "side": "RIGHT",
-                "body": f"**[{severity}]** ({agent})\n{message}",
+                "body": f"**[{f.get('severity', 'info').upper()}]** ({f.get('agent', '')})\n{f.get('message', '')}",
             })
 
     headers = {
@@ -55,41 +59,27 @@ async def post_review(request: ReviewRequest):
         "Accept": "application/vnd.github.v3+json",
     }
     url = f"https://api.github.com/repos/{request.repo_full_name}/pulls/{request.pr_number}/reviews"
+    summary = _build_summary(request.findings)
 
     async with httpx.AsyncClient() as client:
-        summary_lines = ["## AI Code Review\n"]
-        for f in request.findings:
-            severity = f.get("severity", "info").upper()
-            file_ref = f.get("file", "unknown")
-            line_ref = f.get("line", "?")
-            agent = f.get("agent", "")
-            message = f.get("message", "")
-            summary_lines.append(f"**[{severity}]** `{file_ref}:{line_ref}` ({agent})\n{message}\n")
-        summary_body = "\n".join(summary_lines)
-
-        payload = {"event": "COMMENT", "body": summary_body, "comments": inline_comments}
-        response = await client.post(url, json=payload, headers=headers, timeout=30)
-
+        response = await client.post(
+            url,
+            json={"event": "COMMENT", "body": summary, "comments": inline_comments},
+            headers=headers,
+            timeout=30,
+        )
         if response.status_code == 422 and inline_comments:
-            # Fall back: post findings as a single review body comment
-            body_lines = ["## AI Code Review\n"]
-            for f in request.findings:
-                severity = f.get("severity", "info").upper()
-                file_ref = f.get("file", "unknown")
-                line_ref = f.get("line", "?")
-                agent = f.get("agent", "")
-                message = f.get("message", "")
-                body_lines.append(f"**[{severity}]** `{file_ref}:{line_ref}` ({agent})\n{message}\n")
-            fallback_payload = {"event": "COMMENT", "body": "\n".join(body_lines)}
-            response = await client.post(url, json=fallback_payload, headers=headers, timeout=30)
-
+            response = await client.post(
+                url,
+                json={"event": "COMMENT", "body": summary},
+                headers=headers,
+                timeout=30,
+            )
         response.raise_for_status()
 
     async with AsyncSessionLocal() as session:
         await session.execute(
-            update(PullRequest)
-            .where(PullRequest.id == request.pr_id)
-            .values(status="reviewed")
+            update(PullRequest).where(PullRequest.id == request.pr_id).values(status="reviewed")
         )
         await session.commit()
 
@@ -98,11 +88,7 @@ async def post_review(request: ReviewRequest):
 
 def get_installation_token(installation_id: int) -> str:
     now = int(time.time())
-    payload = {
-        "iat": now - 60,
-        "exp": now + 600,
-        "iss": settings.github_app_id,
-    }
+    payload = {"iat": now - 60, "exp": now + 600, "iss": settings.github_app_id}
     private_key = settings.github_app_private_key.replace("\\n", "\n")
     encoded_jwt = jwt.encode(payload, private_key, algorithm="RS256")
 

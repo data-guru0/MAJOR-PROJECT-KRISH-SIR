@@ -1,10 +1,12 @@
-import httpx
-from fastapi import FastAPI
+import time
 
+import httpx
+import jwt
+from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
 
 from models import Settings, Finding, Pattern, AnalyzeRequest
 from graph import build_graph
@@ -25,7 +27,6 @@ async def health():
 @app.post("/analyze", status_code=202)
 async def analyze(request: AnalyzeRequest):
     token = await get_installation_token(request.installation_id)
-
     diff = await fetch_diff(request.repo_full_name, request.pr_number, token)
 
     async with AsyncSessionLocal() as session:
@@ -37,22 +38,19 @@ async def analyze(request: AnalyzeRequest):
         )
         patterns = [row.pattern_text for row in result.scalars().all()]
 
-    graph = build_graph()
-    state = graph.invoke({"diff": diff, "patterns": patterns, "findings": []})
-
+    state = build_graph().invoke({"diff": diff, "patterns": patterns, "findings": []})
     findings_data = state.get("findings", [])
 
     async with AsyncSessionLocal() as session:
         for f in findings_data:
-            finding = Finding(
+            session.add(Finding(
                 pr_id=request.pr_id,
                 file=f.get("file"),
                 line=f.get("line"),
                 severity=f.get("severity"),
                 message=f.get("message"),
                 agent=f.get("agent"),
-            )
-            session.add(finding)
+            ))
         await session.commit()
 
     async with httpx.AsyncClient() as client:
@@ -72,15 +70,8 @@ async def analyze(request: AnalyzeRequest):
 
 
 async def get_installation_token(installation_id: int) -> str:
-    import time
-    import jwt
-
     now = int(time.time())
-    payload = {
-        "iat": now - 60,
-        "exp": now + 600,
-        "iss": settings.github_app_id,
-    }
+    payload = {"iat": now - 60, "exp": now + 600, "iss": settings.github_app_id}
     private_key = settings.github_app_private_key.replace("\\n", "\n")
     encoded_jwt = jwt.encode(payload, private_key, algorithm="RS256")
 
