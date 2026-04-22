@@ -51,5 +51,3 @@ async def learn(request: LearnRequest):
         await session.commit()
 
     return {"status": "ok"}
-" "      
-" "      

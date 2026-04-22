@@ -107,6 +107,3 @@ async def fetch_diff(repo_full_name: str, pr_number: int, token: str) -> str:
         )
         response.raise_for_status()
         return response.text
-" "     
-.  
-" "     

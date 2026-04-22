@@ -44,7 +44,3 @@ async def github_webhook(request: Request):
         response.raise_for_status()
 
     return {"status": "ok"}
-" "   
-" "  
-.  
-" "  
