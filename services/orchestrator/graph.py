@@ -1,5 +1,6 @@
 import json
-from typing import TypedDict
+import operator
+from typing import TypedDict, Annotated
 
 from langfuse.openai import OpenAI
 from langgraph.graph import StateGraph, END
@@ -11,7 +12,7 @@ client = OpenAI()
 class GraphState(TypedDict):
     diff: str
     patterns: list[str]
-    findings: list[dict]
+    findings: Annotated[list[dict], operator.add]
 
 
 def static_analysis_node(state: GraphState) -> dict:
