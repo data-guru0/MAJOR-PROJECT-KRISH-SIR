@@ -41,7 +41,7 @@ async def receive_event(request: Request):
             )
             pr = result.scalar_one_or_none()
             if pr:
-                trigger_learning.delay(repo_full_name, str(pr.id))
+                trigger_learning.apply_async(args=[repo_full_name, str(pr.id)], queue="learning")
         return {"status": "accepted"}
 
     if action not in ("opened", "reopened", "synchronize"):
@@ -66,6 +66,6 @@ async def receive_event(request: Request):
         await session.refresh(pr_record)
         pr_id = str(pr_record.id)
 
-    analyze_pr.delay(pr_id, pr_number, repo_full_name, head_sha, installation_id)
+    analyze_pr.apply_async(args=[pr_id, pr_number, repo_full_name, head_sha, installation_id], queue="webhook")
 
     return {"status": "accepted"}
