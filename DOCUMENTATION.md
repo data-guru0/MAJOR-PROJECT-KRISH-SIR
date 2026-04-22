@@ -55,6 +55,7 @@ Follow every step in exact order. Do not skip anything.
 22. [How to Check If Everything is Running](#22-how-to-check-if-everything-is-running)
 23. [Troubleshooting](#23-troubleshooting)
 24. [Cost Estimate](#24-cost-estimate)
+25. [Teardown — Complete Cleanup](#25-teardown--complete-cleanup)
 
 ---
 
@@ -1779,5 +1780,72 @@ Scale a service:
 
 Shut down everything (stop AWS charges):
   cd "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer\infra\terraform"
-  terraform destroy -var="cluster_name=ai-code-reviewer" -var="db_password=YourStrongPassword123!"
+  terraform destroy -var="cluster_name=ai-code-reviewer" -var="db_password=YourStrongPassword123!" -var="environment=production"
 ```
+
+---
+
+## 25. Teardown — Complete Cleanup
+
+Run this when you want to shut everything down and stop all AWS charges.
+
+### 25.1 Destroy all AWS infrastructure
+
+```
+cd "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer\infra\terraform"
+```
+
+```
+terraform destroy -var="cluster_name=ai-code-reviewer" -var="db_password=YourStrongPassword123!" -var="environment=production"
+```
+
+Terraform will show everything it plans to delete and ask:
+```
+Do you really want to destroy all resources? Enter a value:
+```
+
+Type `yes` and press Enter. This takes 10-15 minutes.
+
+### 25.2 Check for orphaned resources
+
+Terraform sometimes misses resources that were created outside of it (like load balancers created by Kubernetes). Check and delete these manually:
+
+**Load Balancers:**
+```
+aws elbv2 describe-load-balancers --query "LoadBalancers[].LoadBalancerArn" --output text
+```
+If anything is listed, delete each one:
+```
+aws elbv2 delete-load-balancer --load-balancer-arn YOUR_ARN
+```
+
+**EBS Volumes** (created by Prometheus/Grafana PVCs):
+```
+aws ec2 describe-volumes --filters "Name=status,Values=available" --query "Volumes[].VolumeId" --output text
+```
+If anything is listed, delete each one:
+```
+aws ec2 delete-volume --volume-id YOUR_VOLUME_ID
+```
+
+**CloudWatch Log Groups:**
+```
+aws logs describe-log-groups --log-group-name-prefix "/aws/eks" --query "logGroups[].logGroupName" --output text
+```
+Delete each one:
+```
+aws logs delete-log-group --log-group-name YOUR_LOG_GROUP
+```
+
+### 25.3 Verify nothing is left
+
+```
+aws ec2 describe-instances --query "Reservations[].Instances[].InstanceId" --output text
+aws elbv2 describe-load-balancers --query "LoadBalancers[].LoadBalancerArn" --output text
+```
+
+Both should return empty. You are now fully cleaned up with zero ongoing charges.
+
+### 25.4 To redeploy later
+
+Just follow the documentation from Phase 8 onwards — run `terraform apply`, apply the k8s manifests, trigger the pipelines. Everything will come back up exactly as before.
