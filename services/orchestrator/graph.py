@@ -1,5 +1,6 @@
 import json
 import operator
+import re
 from typing import TypedDict, Annotated
 
 from langfuse.openai import OpenAI
@@ -7,6 +8,17 @@ from langgraph.graph import StateGraph, END
 from langgraph.constants import Send
 
 client = OpenAI()
+
+
+def parse_json_response(raw: str) -> list:
+    raw = raw.strip()
+    match = re.search(r"```(?:json)?\s*([\s\S]*?)```", raw)
+    if match:
+        raw = match.group(1).strip()
+    try:
+        return json.loads(raw)
+    except Exception:
+        return []
 
 
 class GraphState(TypedDict):
@@ -27,10 +39,7 @@ def static_analysis_node(state: GraphState) -> dict:
         ],
     )
     raw = response.choices[0].message.content
-    try:
-        items = json.loads(raw)
-    except Exception:
-        items = []
+    items = parse_json_response(raw)
     for item in items:
         item["agent"] = "static_analysis"
     return {"findings": items}
@@ -48,10 +57,7 @@ def security_node(state: GraphState) -> dict:
         ],
     )
     raw = response.choices[0].message.content
-    try:
-        items = json.loads(raw)
-    except Exception:
-        items = []
+    items = parse_json_response(raw)
     for item in items:
         item["agent"] = "security"
     return {"findings": items}
@@ -70,10 +76,7 @@ def style_node(state: GraphState) -> dict:
         ],
     )
     raw = response.choices[0].message.content
-    try:
-        items = json.loads(raw)
-    except Exception:
-        items = []
+    items = parse_json_response(raw)
     for item in items:
         item["agent"] = "style"
     return {"findings": items}
@@ -91,10 +94,7 @@ def architecture_node(state: GraphState) -> dict:
         ],
     )
     raw = response.choices[0].message.content
-    try:
-        items = json.loads(raw)
-    except Exception:
-        items = []
+    items = parse_json_response(raw)
     for item in items:
         item["agent"] = "architecture"
     return {"findings": items}
