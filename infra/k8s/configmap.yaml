@@ -3,8 +3,8 @@ kind: ConfigMap
 metadata:
   name: app-config
 data:
-  LANGFUSE_HOST: "http://langfuse:3000"
-  REDIS_URL: "redis://redis:6379/0"
+  LANGFUSE_HOST: "https://cloud.langfuse.com"
+  REDIS_URL: "redis://ai-code-reviewer-redis.khmhzg.0001.use1.cache.amazonaws.com:6379/0"
   WEBHOOK_SERVICE_URL: "http://webhook:8001"
   ORCHESTRATOR_SERVICE_URL: "http://orchestrator:8002"
   REVIEWER_SERVICE_URL: "http://reviewer:8003"

@@ -11,10 +11,14 @@ spec:
     metadata:
       labels:
         app: learner
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8004"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: learner
-          image: IMAGE_TAG
+          image: 789438508565.dkr.ecr.us-east-1.amazonaws.com/learner:latest
           ports:
             - containerPort: 8004
           envFrom:

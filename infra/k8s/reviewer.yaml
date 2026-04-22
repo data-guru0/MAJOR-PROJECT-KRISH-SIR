@@ -11,10 +11,14 @@ spec:
     metadata:
       labels:
         app: reviewer
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8003"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: reviewer
-          image: IMAGE_TAG
+          image: 789438508565.dkr.ecr.us-east-1.amazonaws.com/reviewer:latest
           ports:
             - containerPort: 8003
           envFrom:

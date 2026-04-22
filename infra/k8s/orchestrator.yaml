@@ -11,10 +11,14 @@ spec:
     metadata:
       labels:
         app: orchestrator
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8002"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
         - name: orchestrator
-          image: IMAGE_TAG
+          image: 789438508565.dkr.ecr.us-east-1.amazonaws.com/orchestrator:latest
           ports:
             - containerPort: 8002
           envFrom:
