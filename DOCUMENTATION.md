@@ -669,12 +669,12 @@ For each secret: click "New repository secret", enter the Name and Value, click 
 
 | Name | Value |
 |---|---|
-| `DATABASE_URL` | `postgresql://user:YourStrongPassword123!@YOUR_RDS_ENDPOINT/codereviewer` |
+| `DATABASE_URL` | `postgresql://dbadmin:YourStrongPassword123!@YOUR_RDS_ENDPOINT/codereviewer` |
 
 For the DATABASE_URL value, replace `YOUR_RDS_ENDPOINT` with the `rds_endpoint` value from your Terraform output. Remove the `:5432` from the end of the endpoint if it is already there in the terraform output — do not duplicate the port.
 
 Example of what it should look like:
-`postgresql://user:YourStrongPassword123!@ai-code-reviewer-postgres.abc123.us-east-1.rds.amazonaws.com/codereviewer`
+`postgresql://dbadmin:YourStrongPassword123!@ai-code-reviewer-postgres.abc123.us-east-1.rds.amazonaws.com/codereviewer`
 
 After adding all secrets, you should have 10 secrets total in the list.
 
@@ -852,7 +852,7 @@ stringData:
   OPENAI_API_KEY: "sk-proj-abc123..."
   LANGFUSE_PUBLIC_KEY: "pk-lf-abc123..."
   LANGFUSE_SECRET_KEY: "sk-lf-abc123..."
-  DATABASE_URL: "postgresql+asyncpg://user:YourStrongPassword123!@ai-code-reviewer-postgres.abc123.us-east-1.rds.amazonaws.com/codereviewer"
+  DATABASE_URL: "postgresql+asyncpg://dbadmin:YourStrongPassword123!@ai-code-reviewer-postgres.abc123.us-east-1.rds.amazonaws.com/codereviewer"
 ```
 
 **Important notes:**

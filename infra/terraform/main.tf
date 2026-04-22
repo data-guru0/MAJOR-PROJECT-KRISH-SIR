@@ -21,9 +21,10 @@ module "vpc" {
   azs            = ["${var.region}a", "${var.region}b"]
   public_subnets = ["10.0.1.0/24", "10.0.2.0/24"]
 
-  enable_nat_gateway = false
-  enable_dns_hostnames = true
-  enable_dns_support   = true
+  enable_nat_gateway      = false
+  enable_dns_hostnames    = true
+  enable_dns_support      = true
+  map_public_ip_on_launch = true
 
   tags = {
     Environment = var.environment
@@ -35,7 +36,7 @@ module "eks" {
   version = "~> 20.0"
 
   cluster_name    = var.cluster_name
-  cluster_version = "1.29"
+  cluster_version = "1.32"
 
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.public_subnets
@@ -67,8 +68,9 @@ resource "aws_db_instance" "postgres" {
   engine            = "postgres"
   engine_version    = "15"
   instance_class    = "db.t3.micro"
+  allocated_storage = 20
   db_name           = "codereviewer"
-  username          = "user"
+  username          = "dbadmin"
   password          = var.db_password
   multi_az          = false
   publicly_accessible = false
