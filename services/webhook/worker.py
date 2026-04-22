@@ -4,6 +4,10 @@ import os
 
 redis_url = os.environ.get("REDIS_URL", "redis://redis:6379/0")
 app = Celery("webhook", broker=redis_url, backend=redis_url)
+app.conf.task_routes = {
+    "analyze_pr": {"queue": "webhook"},
+    "trigger_learning": {"queue": "learning"},
+}
 
 
 @app.task(name="analyze_pr")

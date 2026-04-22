@@ -14,8 +14,8 @@ spec:
     spec:
       containers:
         - name: webhook-worker
-          image: IMAGE_TAG
-          command: ["celery", "-A", "worker", "worker", "--loglevel=info"]
+          image: 789438508565.dkr.ecr.us-east-1.amazonaws.com/webhook:latest
+          command: ["celery", "-A", "worker", "worker", "--loglevel=info", "-Q", "webhook"]
           envFrom:
             - configMapRef:
                 name: app-config
@@ -30,6 +30,8 @@ spec:
               memory: 512Mi
           livenessProbe:
             exec:
-              command: ["celery", "-A", "worker", "inspect", "ping"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
+              command: ["celery", "-A", "worker", "inspect", "ping", "--timeout=10"]
+            initialDelaySeconds: 60
+            periodSeconds: 120
+            timeoutSeconds: 30
+            failureThreshold: 3
