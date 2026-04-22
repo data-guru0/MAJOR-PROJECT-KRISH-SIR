@@ -104,7 +104,7 @@ def merge_node(state: GraphState) -> dict:
     seen = set()
     merged = []
     for finding in state["findings"]:
-        key = (finding.get("file"), finding.get("line"))
+        key = (finding.get("file"), finding.get("line"), finding.get("agent"), finding.get("message"))
         if key not in seen:
             seen.add(key)
             merged.append(finding)

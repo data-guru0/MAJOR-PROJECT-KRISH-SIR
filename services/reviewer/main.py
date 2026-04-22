@@ -31,27 +31,44 @@ async def post_review(request: ReviewRequest):
     if not request.findings:
         return {"status": "ok"}
 
-    body_lines = ["## AI Code Review\n"]
+    inline_comments = []
     for f in request.findings:
         severity = f.get("severity", "info").upper()
-        file_ref = f.get("file", "unknown")
-        line_ref = f.get("line", "?")
+        file_ref = f.get("file", "")
+        line_ref = f.get("line")
         agent = f.get("agent", "")
         message = f.get("message", "")
-        body_lines.append(f"**[{severity}]** `{file_ref}:{line_ref}` ({agent})\n{message}\n")
+        if file_ref and isinstance(line_ref, int) and line_ref > 0:
+            inline_comments.append({
+                "path": file_ref,
+                "line": line_ref,
+                "side": "RIGHT",
+                "body": f"**[{severity}]** ({agent})\n{message}",
+            })
 
-    body = "\n".join(body_lines)
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github.v3+json",
+    }
+    url = f"https://api.github.com/repos/{request.repo_full_name}/pulls/{request.pr_number}/reviews"
 
     async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"https://api.github.com/repos/{request.repo_full_name}/pulls/{request.pr_number}/reviews",
-            json={"event": "COMMENT", "body": body},
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Accept": "application/vnd.github.v3+json",
-            },
-            timeout=30,
-        )
+        payload = {"event": "COMMENT", "body": "## AI Code Review", "comments": inline_comments}
+        response = await client.post(url, json=payload, headers=headers, timeout=30)
+
+        if response.status_code == 422 and inline_comments:
+            # Fall back: post findings as a single review body comment
+            body_lines = ["## AI Code Review\n"]
+            for f in request.findings:
+                severity = f.get("severity", "info").upper()
+                file_ref = f.get("file", "unknown")
+                line_ref = f.get("line", "?")
+                agent = f.get("agent", "")
+                message = f.get("message", "")
+                body_lines.append(f"**[{severity}]** `{file_ref}:{line_ref}` ({agent})\n{message}\n")
+            fallback_payload = {"event": "COMMENT", "body": "\n".join(body_lines)}
+            response = await client.post(url, json=fallback_payload, headers=headers, timeout=30)
+
         response.raise_for_status()
 
     async with AsyncSessionLocal() as session:
