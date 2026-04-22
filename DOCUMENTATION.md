@@ -917,6 +917,7 @@ stringData:
 **Important notes:**
 - The `DATABASE_URL` here must use `postgresql+asyncpg://` (with asyncpg) — this is different from the one you put in GitHub secrets
 - The private key must keep all its line breaks exactly as they are in the `.pem` file
+- `LANGFUSE_PUBLIC_KEY` and `LANGFUSE_SECRET_KEY` go here only — do NOT add them to GitHub Actions secrets. The pipeline never touches this file. These keys are read directly by the orchestrator pod at runtime.
 - Save the file: Ctrl+S, then close Notepad
 
 ### 15.2 Navigate to the k8s folder
