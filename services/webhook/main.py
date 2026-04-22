@@ -68,3 +68,4 @@ async def receive_event(request: Request):
     analyze_pr.delay(pr_id, pr_number, repo_full_name, head_sha, installation_id)
 
     return {"status": "accepted"}
+" "  
