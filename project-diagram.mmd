@@ -1,0 +1,157 @@
+---
+title: AI Code Reviewer — System Architecture
+---
+
+flowchart TD
+    %% ─── External Actors ─────────────────────────────────────────────
+    DEV["👨‍💻 Developer\nOpens / Updates PR"]
+    GH["GitHub\n(webhook sender)"]
+
+    %% ─── Entry Point ─────────────────────────────────────────────────
+    subgraph INGRESS["AWS ALB Ingress (Public)"]
+        ALB["Load Balancer\n(SSL termination)"]
+    end
+
+    %% ─── Microservices ───────────────────────────────────────────────
+    subgraph SERVICES["Microservices (EKS / Kubernetes)"]
+        direction TB
+
+        subgraph GW["Gateway  :8000"]
+            G1["Verify HMAC-SHA256\nWebhook Signature"]
+            G2["Reject invalid\nrequests → 401"]
+        end
+
+        subgraph WH["Webhook  :8001"]
+            W1["Parse GitHub Event\n(opened / synchronize / closed)"]
+            W2["Deduplicate by\nrepo + PR + head_sha"]
+            W3["Save PR record\nto PostgreSQL"]
+            W4["Enqueue Celery task\n→ Redis webhook queue"]
+            W5["Return 202 Accepted\nimmediately"]
+        end
+
+        subgraph WORKERS["Celery Workers"]
+            WW["Webhook Worker\nqueue: webhook"]
+            LW["Learner Worker\nqueue: learning"]
+        end
+
+        subgraph ORC["Orchestrator  :8002"]
+            O1["Fetch PR diff\nfrom GitHub API"]
+            O2["Load repo patterns\nfrom DB"]
+            O3["LangGraph — 4 agents\nin parallel"]
+            O4["Merge & deduplicate\nfindings"]
+            O5["Save findings\nto PostgreSQL"]
+
+            subgraph AGENTS["AI Agents  (GPT-4o-mini, ~15-30s)"]
+                A1["🔍 Static Analysis\nComplexity · Dead code\nBad naming"]
+                A2["🔒 Security\nOWASP Top 10\nHardcoded secrets\nSQL injection"]
+                A3["🎨 Style\nFormatting · Readability\n+ Learned Patterns"]
+                A4["🏗️ Architecture\nSeparation of concerns\nError handling"]
+            end
+        end
+
+        subgraph REV["Reviewer  :8003"]
+            R1["Generate GitHub App JWT\n(10 min expiry)"]
+            R2["Exchange JWT for\nInstallation Token"]
+            R3["Post inline comments\nper finding (file + line)"]
+            R4["Post summary review\nwith all issues"]
+            R5["Mark PR as reviewed\nin DB"]
+        end
+
+        subgraph LRN["Learner  :8004"]
+            L1["Read warning/error\nfindings from DB"]
+            L2["Upsert repo patterns\nincrement frequency"]
+        end
+    end
+
+    %% ─── Data Stores ─────────────────────────────────────────────────
+    subgraph DATA["Data Layer (Private VPC Subnet)"]
+        PG[("PostgreSQL 15\nRDS\n─────────\npull_requests\nfindings\npatterns")]
+        RD[("Redis\nElastiCache\n─────────\nwebhook queue\nlearning queue")]
+    end
+
+    %% ─── Observability ───────────────────────────────────────────────
+    subgraph OBS["Observability"]
+        PROM["Prometheus\nscrapes /metrics\nevery 60s"]
+        GRAF["Grafana\nDashboard\n(request rate,\np99, errors)"]
+        LF["LangFuse\nAI call traces\n(prompt, tokens,\ncost, latency)"]
+        RAGAS["RAGAS\nWeekly evaluation\n(faithfulness,\nrelevancy)"]
+    end
+
+    %% ─── CI/CD ───────────────────────────────────────────────────────
+    subgraph CICD["CI/CD (GitHub Actions)"]
+        GHA["5 Parallel Pipelines\n(one per service)\n─────────\nTest → Build → Push ECR\n→ kubectl rolling update"]
+        OIDC["GitHub OIDC\n(no stored AWS keys)"]
+        ECR["AWS ECR\nContainer Registry"]
+    end
+
+    %% ─── PR Review Loop ──────────────────────────────────────────────
+    DEV -->|"Opens PR"| GH
+    GH -->|"POST /webhook\n+ X-Hub-Signature-256"| ALB
+    ALB --> G1
+    G1 -->|"valid"| W1
+    G1 -->|"invalid"| G2
+    W1 --> W2
+    W2 -->|"new commit"| W3
+    W2 -->|"already seen"| W5
+    W3 --> W4
+    W4 -->|"analyze_pr task"| RD
+    W4 --> W5
+
+    RD -->|"picks up task"| WW
+    WW -->|"POST /analyze"| O1
+    O1 -->|"fetch diff"| GH
+    O1 --> O2
+    O2 -->|"repo patterns"| PG
+    O2 --> O3
+    O3 --> A1 & A2 & A3 & A4
+    A1 & A2 & A3 & A4 --> O4
+    O4 --> O5
+    O5 --> PG
+    O5 -->|"POST /review"| R1
+    R1 --> R2
+    R2 -->|"install token"| GH
+    R2 --> R3
+    R3 -->|"inline comments"| GH
+    R3 --> R4
+    R4 -->|"summary review"| GH
+    R4 --> R5
+    R5 --> PG
+
+    GH -->|"PR visible\nto developer"| DEV
+
+    %% ─── Learning Loop (on PR merge) ─────────────────────────────────
+    DEV -->|"Merges PR"| GH
+    GH -->|"closed event"| ALB
+    W1 -->|"trigger_learning task\n(merged PRs only)"| RD
+    RD -->|"picks up task"| LW
+    LW -->|"POST /learn"| L1
+    L1 --> PG
+    L1 --> L2
+    L2 -->|"upsert patterns"| PG
+    PG -->|"patterns used in\nnext PR review"| O2
+
+    %% ─── Observability connections ────────────────────────────────────
+    GW & WH & ORC & REV & LRN -->|"/metrics"| PROM
+    PROM --> GRAF
+    O3 -->|"traces each\nGPT-4o-mini call"| LF
+    RAGAS -->|"reads last 50\nfindings"| PG
+
+    %% ─── CI/CD connections ───────────────────────────────────────────
+    GHA --> OIDC
+    OIDC -->|"temp AWS creds"| ECR
+    ECR -->|"kubectl set image\n(rolling update)"| SERVICES
+
+    %% ─── Styles ──────────────────────────────────────────────────────
+    classDef service fill:#1e40af,stroke:#3b82f6,color:#fff,rx:8
+    classDef store fill:#166534,stroke:#22c55e,color:#fff
+    classDef agent fill:#6b21a8,stroke:#a855f7,color:#fff
+    classDef obs fill:#92400e,stroke:#f59e0b,color:#fff
+    classDef external fill:#374151,stroke:#9ca3af,color:#fff
+    classDef worker fill:#1e3a5f,stroke:#60a5fa,color:#fff
+
+    class GW,WH,ORC,REV,LRN service
+    class PG,RD store
+    class A1,A2,A3,A4 agent
+    class PROM,GRAF,LF,RAGAS obs
+    class DEV,GH,ECR,OIDC,GHA external
+    class WW,LW worker

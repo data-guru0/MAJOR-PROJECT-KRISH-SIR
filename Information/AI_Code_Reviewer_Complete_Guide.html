@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Code Reviewer — Complete Project Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --bg2: #0f1526;
+      --bg3: #141b30;
+      --card: #1a2240;
+      --card2: #1e2848;
+      --border: #2a3460;
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --accent3: #06b6d4;
+      --green: #10b981;
+      --orange: #f59e0b;
+      --red: #ef4444;
+      --pink: #ec4899;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --glow: rgba(99,102,241,0.15);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: sticky; top:0; z-index:100;
+      background: rgba(10,14,26,0.95);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+    }
+    nav .inner {
+      max-width: 1200px; margin: 0 auto;
+      display: flex; align-items: center; gap: 2rem;
+      height: 60px;
+    }
+    nav .logo { font-weight:800; font-size:1rem; background: linear-gradient(135deg, var(--accent), var(--accent3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; white-space:nowrap; }
+    nav a { color: var(--muted); text-decoration:none; font-size:0.82rem; font-weight:500; transition:color 0.2s; white-space:nowrap; }
+    nav a:hover { color: var(--text); }
+
+    /* HERO */
+    .hero {
+      text-align: center;
+      padding: 100px 2rem 80px;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,102,241,0.12) 0%, transparent 70%);
+    }
+    .hero .badge {
+      display: inline-block;
+      background: rgba(99,102,241,0.15);
+      border: 1px solid rgba(99,102,241,0.4);
+      color: #a5b4fc;
+      padding: 6px 20px; border-radius: 999px;
+      font-size: 0.78rem; font-weight:600; letter-spacing:0.08em;
+      text-transform: uppercase; margin-bottom: 24px;
+    }
+    .hero h1 { font-size: clamp(2.4rem, 5vw, 4rem); font-weight:900; line-height:1.1; margin-bottom:20px; }
+    .hero h1 span { background: linear-gradient(135deg, var(--accent), var(--accent3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .hero p { font-size:1.15rem; color:var(--muted); max-width:680px; margin:0 auto 40px; }
+    .pill-row { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-bottom:20px; }
+    .pill { background: var(--card); border: 1px solid var(--border); padding:6px 16px; border-radius:999px; font-size:0.8rem; color:var(--muted); }
+    .pill span { color: var(--text); font-weight:600; }
+
+    /* SECTION */
+    section { padding: 80px 2rem; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-label {
+      display: inline-flex; align-items:center; gap:8px;
+      background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3);
+      color: #818cf8; padding: 5px 14px; border-radius: 999px;
+      font-size: 0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase;
+      margin-bottom: 16px;
+    }
+    h2 { font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight:800; margin-bottom:12px; }
+    h2 span { background: linear-gradient(135deg, var(--accent), var(--accent3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .lead { color:var(--muted); font-size:1.05rem; max-width:700px; margin-bottom:48px; }
+
+    /* CARDS */
+    .grid-3 { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:20px; }
+    .grid-2 { display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap:20px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 40px rgba(99,102,241,0.15); }
+    .card .icon { font-size:2rem; margin-bottom:14px; }
+    .card h3 { font-size:1.05rem; font-weight:700; margin-bottom:8px; }
+    .card p { font-size:0.88rem; color:var(--muted); line-height:1.7; }
+
+    /* FEATURES GRID */
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      display: grid; grid-template-columns: 36px 1fr; gap: 16px; align-items: start;
+    }
+    .feature-card .icon-wrap {
+      width:36px; height:36px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.1rem; flex-shrink:0; margin-top:2px;
+    }
+    .feature-card h4 { font-size:0.92rem; font-weight:700; margin-bottom:4px; }
+    .feature-card p { font-size:0.82rem; color:var(--muted); line-height:1.6; }
+
+    /* TECH TABLE */
+    .tech-section { margin-bottom: 48px; }
+    .tech-section h3 { font-size: 1.1rem; font-weight:700; margin-bottom: 16px; color: var(--accent3); display:flex; align-items:center; gap:8px; }
+    .tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
+    .tech-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      transition: border-color 0.3s;
+    }
+    .tech-card:hover { border-color: rgba(99,102,241,0.5); }
+    .tech-card .top { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+    .tech-card .badge2 {
+      font-size:0.7rem; font-weight:700; padding:2px 10px; border-radius:999px;
+      background: rgba(99,102,241,0.15); color:#a5b4fc; border:1px solid rgba(99,102,241,0.3);
+      white-space:nowrap;
+    }
+    .tech-card .name { font-size:0.95rem; font-weight:700; }
+    .tech-card .desc { font-size:0.82rem; color:var(--muted); line-height:1.65; }
+    .tech-card .role { font-size:0.78rem; color: var(--accent3); font-weight:600; margin-top:6px; }
+
+    /* DIVIDER */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    /* DIAGRAM SECTION */
+    .diagram-wrap {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 32px;
+      overflow-x: auto;
+    }
+    .diagram-title {
+      text-align:center; font-size:1rem; font-weight:700;
+      color:var(--muted); margin-bottom:32px; letter-spacing:0.05em; text-transform:uppercase;
+    }
+
+    /* SVG FLOW STYLES */
+    .flow-svg { width:100%; }
+
+    /* TIMELINE */
+    .timeline { position:relative; padding-left: 48px; }
+    .timeline::before {
+      content:'';
+      position:absolute; left:16px; top:0; bottom:0;
+      width: 2px; background: linear-gradient(to bottom, var(--accent), var(--accent2), transparent);
+    }
+    .timeline-item { position:relative; margin-bottom: 40px; }
+    .timeline-item::before {
+      content: attr(data-step);
+      position:absolute; left:-40px; top:0;
+      width:28px; height:28px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius:50%; display:flex; align-items:center; justify-content:center;
+      font-size:0.75rem; font-weight:800; color:white;
+      display: flex; align-items:center; justify-content:center;
+      line-height:28px; text-align:center;
+    }
+    .timeline-item h4 { font-size:1rem; font-weight:700; margin-bottom:6px; }
+    .timeline-item p { font-size:0.88rem; color:var(--muted); }
+    .timeline-item .time-badge {
+      display:inline-block; margin-top:8px;
+      background: rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3);
+      color:#34d399; padding:2px 10px; border-radius:999px; font-size:0.75rem; font-weight:600;
+    }
+
+    /* TABLE */
+    table { width:100%; border-collapse:collapse; }
+    th { background: var(--card2); padding:12px 16px; text-align:left; font-size:0.8rem; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid var(--border); }
+    td { padding:14px 16px; border-bottom:1px solid rgba(42,52,96,0.5); font-size:0.88rem; vertical-align:top; }
+    tr:last-child td { border-bottom:none; }
+    tr:hover td { background: rgba(99,102,241,0.04); }
+    td:first-child { font-weight:700; color: var(--accent3); font-family:'Fira Code', monospace; font-size:0.82rem; }
+
+    /* CODE */
+    code { font-family: 'Fira Code', monospace; font-size:0.82rem; background:rgba(99,102,241,0.1); padding:2px 7px; border-radius:4px; color:#a5b4fc; }
+
+    /* STAT ROW */
+    .stat-row { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:16px; margin-bottom:48px; }
+    .stat-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px; padding: 24px 20px; text-align:center;
+    }
+    .stat-box .num { font-size:2.2rem; font-weight:900; background: linear-gradient(135deg, var(--accent), var(--accent3)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; line-height:1; }
+    .stat-box .label { font-size:0.78rem; color:var(--muted); margin-top:6px; font-weight:500; }
+
+    /* FOOTER */
+    footer { padding:40px 2rem; text-align:center; color:var(--muted); font-size:0.82rem; border-top:1px solid var(--border); }
+    footer strong { color:var(--text); }
+
+    /* AGENT BOX */
+    .agent-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:16px; }
+    .agent-card {
+      border-radius:12px; padding:20px;
+      border: 1px solid var(--border);
+    }
+    .agent-card h4 { font-size:0.9rem; font-weight:700; margin-bottom:8px; }
+    .agent-card ul { padding-left:16px; }
+    .agent-card ul li { font-size:0.82rem; color:var(--muted); margin-bottom:4px; }
+
+    /* HIGHLIGHT BOX */
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(6,182,212,0.07));
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 16px; padding:32px;
+      margin-bottom: 32px;
+    }
+    .highlight-box h3 { font-size:1.2rem; font-weight:700; margin-bottom: 12px; }
+
+    /* FLOW BOXES */
+    .flow-step {
+      display:flex; gap:0; align-items: stretch;
+      margin-bottom:0;
+    }
+    .step-box {
+      flex:1; background: var(--card); border:1px solid var(--border);
+      border-radius:10px; padding:16px; text-align:center; position:relative;
+    }
+    .step-box h5 { font-size:0.82rem; font-weight:700; margin-bottom:4px; color:var(--accent3); }
+    .step-box p { font-size:0.75rem; color:var(--muted); }
+    .arrow-right { display:flex; align-items:center; padding:0 8px; color:var(--border); font-size:1.2rem; flex-shrink:0; }
+
+    @media(max-width:768px) {
+      nav .inner { gap:1rem; overflow-x:auto; }
+      .agent-grid { grid-template-columns:1fr; }
+      .grid-2 { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="inner">
+    <div class="logo">⚡ AI Code Reviewer</div>
+    <a href="#usecase">Use Case</a>
+    <a href="#features">Features</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#agents">AI Agents</a>
+    <a href="#tech">Tech Stack</a>
+    <a href="#cicd">CI/CD</a>
+    <a href="#production">Production</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">🎓 Major Project — Production Grade AI System</div>
+  <h1>AI <span>Code Reviewer</span><br/>— Complete Project Guide</h1>
+  <p>An automated GitHub bot that reviews every Pull Request using 4 specialized AI agents in parallel, posting inline code comments within 30 seconds.</p>
+  <div class="pill-row">
+    <div class="pill"><span>5</span> Microservices</div>
+    <div class="pill"><span>4</span> AI Agents</div>
+    <div class="pill"><span>~30s</span> Review Time</div>
+    <div class="pill"><span>AWS EKS</span> Production</div>
+    <div class="pill"><span>Zero</span> Downtime Deploys</div>
+    <div class="pill"><span>GPT-4o-mini</span> Powered</div>
+  </div>
+</div>
+
+<!-- STATS -->
+<section style="padding-top:0;">
+  <div class="section-inner">
+    <div class="stat-row">
+      <div class="stat-box"><div class="num">~30s</div><div class="label">PR to Review Comments</div></div>
+      <div class="stat-box"><div class="num">4</div><div class="label">Parallel AI Agents</div></div>
+      <div class="stat-box"><div class="num">5</div><div class="label">Microservices</div></div>
+      <div class="stat-box"><div class="num">2×</div><div class="label">Pod Replicas (Fault Tolerance)</div></div>
+      <div class="stat-box"><div class="num">10×</div><div class="label">Max Auto-Scale Pods</div></div>
+      <div class="stat-box"><div class="num">0</div><div class="label">Stored AWS Secrets</div></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- USE CASE -->
+<section id="usecase">
+  <div class="section-inner">
+    <div class="section-label">📌 Use Case</div>
+    <h2>What Problem Does This <span>Solve?</span></h2>
+    <p class="lead">Code review is the biggest bottleneck in software development. This project eliminates that bottleneck with instant, automated AI reviews on every Pull Request.</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="icon">⏳</div>
+        <h3>Problem: Slow Reviews</h3>
+        <p>Human code reviews can take hours or days, blocking releases and frustrating developers waiting for feedback on their code.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🎯</div>
+        <h3>Problem: Missed Issues</h3>
+        <p>Reviewers get fatigued. Security vulnerabilities, OWASP risks, and architectural debt slip through inconsistent human reviews.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔄</div>
+        <h3>Problem: Context Switching</h3>
+        <p>Developers must stop their own coding to review someone else's work — breaking deep focus and reducing overall productivity.</p>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;" class="grid-3">
+      <div class="card" style="border-color: rgba(16,185,129,0.3);">
+        <div class="icon">⚡</div>
+        <h3 style="color:#34d399">Solution: Instant Feedback</h3>
+        <p>Bot reviews every PR in ~30 seconds. Developers get detailed, actionable feedback before a human even opens the PR.</p>
+      </div>
+      <div class="card" style="border-color: rgba(16,185,129,0.3);">
+        <div class="icon">🛡️</div>
+        <h3 style="color:#34d399">Solution: Complete Coverage</h3>
+        <p>4 specialized agents run in parallel covering security, static analysis, style, and architecture — nothing is missed.</p>
+      </div>
+      <div class="card" style="border-color: rgba(16,185,129,0.3);">
+        <div class="icon">🧠</div>
+        <h3 style="color:#34d399">Solution: Gets Smarter</h3>
+        <p>After every merged PR, the Learner service captures patterns. Future reviews are personalized to each repo's history.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-inner">
+    <div class="section-label">✨ Features</div>
+    <h2>Production-Grade <span>Capabilities</span></h2>
+    <p class="lead">Built with enterprise-level reliability, security, and scalability from day one.</p>
+
+    <div class="grid-2">
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(99,102,241,0.15);">🚀</div>
+        <div>
+          <h4>Zero Downtime Deployments</h4>
+          <p>Kubernetes rolling updates ensure new pods are healthy before old ones stop. No webhook events are ever missed during code deployments.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(6,182,212,0.15);">📈</div>
+        <div>
+          <h4>Auto Scaling (HPA)</h4>
+          <p>Kubernetes Horizontal Pod Autoscaler scales the orchestrator from 2 to 10 pods automatically during PR traffic spikes.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(245,158,11,0.15);">⚡</div>
+        <div>
+          <h4>Async Everything</h4>
+          <p>All DB and HTTP calls use non-blocking <code>asyncio</code> + <code>asyncpg</code>. Services stay fast under high concurrency with no thread blocking.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(16,185,129,0.15);">🔒</div>
+        <div>
+          <h4>HMAC Signature Verification</h4>
+          <p>Every single webhook is verified using SHA-256 HMAC before processing. Fake or malicious spoofed GitHub events are rejected at the gateway.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(236,72,153,0.15);">🧬</div>
+        <div>
+          <h4>Deduplication Logic</h4>
+          <p>Webhook service deduplicates by <code>repo + PR number + commit SHA</code> preventing duplicate AI analysis calls when GitHub resends events.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(99,102,241,0.15);">🔑</div>
+        <div>
+          <h4>Passwordless AWS Auth (OIDC)</h4>
+          <p>GitHub OIDC integration generates temporary AWS credentials per pipeline run. Zero long-lived secrets stored anywhere in the system.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(6,182,212,0.15);">📊</div>
+        <div>
+          <h4>Full Observability Stack</h4>
+          <p>Prometheus scrapes metrics every 60 seconds. Grafana displays dashboards. LangFuse traces every GPT call with cost, latency, and token counts.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(245,158,11,0.15);">📅</div>
+        <div>
+          <h4>Weekly AI Quality Checks (RAGAS)</h4>
+          <p>Every Monday, RAGAS evaluates comment faithfulness and relevancy automatically. Alerts if AI quality drifts below threshold.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(16,185,129,0.15);">🧠</div>
+        <div>
+          <h4>Self-Improving Reviews</h4>
+          <p>Learner service stores patterns from merged PRs. Style agent context grows over time — reviews get increasingly relevant to each specific repository.</p>
+        </div>
+      </div>
+      <div class="feature-card">
+        <div class="icon-wrap" style="background:rgba(236,72,153,0.15);">🛡️</div>
+        <div>
+          <h4>Fault Tolerance (2 Replicas)</h4>
+          <p>Every service runs as 2 Kubernetes pods by default. Pod crash = instant traffic failover. No manual intervention required.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="section-inner">
+    <div class="section-label">🏗️ Architecture</div>
+    <h2>Full System <span>Architecture</span></h2>
+    <p class="lead">A distributed microservices system running on AWS EKS. 5 specialized services communicate via HTTP and a Redis task queue.</p>
+
+    <div class="diagram-wrap">
+      <div class="diagram-title">End-to-End System Architecture Diagram</div>
+      <svg viewBox="0 0 1000 780" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:1000px;display:block;margin:0 auto;">
+        <defs>
+          <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="grad3" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#ef4444;stop-opacity:1" />
+          </linearGradient>
+          <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/>
+          </marker>
+          <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
+          </marker>
+          <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#4a5568"/>
+          </marker>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+
+        <!-- Background -->
+        <rect width="1000" height="780" fill="#0f1526" rx="16"/>
+
+        <!-- AWS VPC Box -->
+        <rect x="20" y="120" width="960" height="640" rx="12" fill="rgba(30,40,72,0.5)" stroke="#2a3460" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="35" y="145" font-family="Inter" font-size="11" fill="#4a5568" font-weight="600">AWS VPC — us-east-1</text>
+
+        <!-- INTERNET & GitHub -->
+        <rect x="380" y="16" width="240" height="60" rx="10" fill="url(#grad1)" filter="url(#glow)"/>
+        <text x="500" y="40" text-anchor="middle" font-family="Inter" font-size="13" fill="white" font-weight="700">🌐 Internet / GitHub</text>
+        <text x="500" y="58" text-anchor="middle" font-family="Inter" font-size="10" fill="rgba(255,255,255,0.7)">Developer opens PR → Webhook event sent</text>
+
+        <!-- Arrow: Internet → ALB -->
+        <line x1="500" y1="76" x2="500" y2="156" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="440" y="100" width="120" height="20" rx="4" fill="rgba(99,102,241,0.15)"/>
+        <text x="500" y="113" text-anchor="middle" font-family="Inter" font-size="9.5" fill="#a5b4fc">HTTPS Webhook Event</text>
+
+        <!-- ALB -->
+        <rect x="350" y="156" width="300" height="56" rx="10" fill="#1a2240" stroke="#2a3460" stroke-width="1.5"/>
+        <text x="500" y="180" text-anchor="middle" font-family="Inter" font-size="13" fill="#a5b4fc" font-weight="700">⚖️ AWS ALB</text>
+        <text x="500" y="198" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">Application Load Balancer — Public Entry Point</text>
+
+        <!-- Arrow: ALB → Gateway -->
+        <line x1="500" y1="212" x2="500" y2="252" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- Gateway Service -->
+        <rect x="310" y="252" width="380" height="60" rx="10" fill="#1a2240" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="500" y="278" text-anchor="middle" font-family="Inter" font-size="13" fill="#818cf8" font-weight="700">🔒 Gateway Service  :8000</text>
+        <text x="500" y="296" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">Verifies HMAC-SHA256 Signature — Rejects Fake Requests</text>
+
+        <!-- Arrow: Gateway → Webhook -->
+        <line x1="500" y1="312" x2="500" y2="352" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="420" y="322" width="160" height="18" rx="4" fill="rgba(99,102,241,0.1)"/>
+        <text x="500" y="334" text-anchor="middle" font-family="Inter" font-size="9" fill="#818cf8">Verified &amp; forwarded request</text>
+
+        <!-- Webhook Service -->
+        <rect x="310" y="352" width="380" height="60" rx="10" fill="#1a2240" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="500" y="376" text-anchor="middle" font-family="Inter" font-size="13" fill="#818cf8" font-weight="700">📨 Webhook Service  :8001</text>
+        <text x="500" y="394" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">Parses Event · Dedupes by SHA · Saves to DB · Queues Celery Task</text>
+
+        <!-- 202 Back to GitHub arrow -->
+        <line x1="312" y1="382" x2="80" y2="382" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-green)"/>
+        <line x1="80" y1="382" x2="80" y2="46" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <line x1="80" y1="46" x2="378" y2="46" stroke="#10b981" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow-green)"/>
+        <rect x="82" y="370" width="110" height="18" rx="4" fill="rgba(16,185,129,0.1)"/>
+        <text x="137" y="382" text-anchor="middle" font-family="Inter" font-size="9" fill="#34d399">202 Accepted instantly</text>
+
+        <!-- Arrow: Webhook → Redis -->
+        <line x1="500" y1="412" x2="500" y2="452" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- Redis -->
+        <rect x="350" y="452" width="300" height="56" rx="10" fill="#1a2240" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="500" y="476" text-anchor="middle" font-family="Inter" font-size="13" fill="#fbbf24" font-weight="700">⚡ Redis (ElastiCache)</text>
+        <text x="500" y="494" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">Task Queue — webhook queue · learning queue</text>
+
+        <!-- Arrow: Redis → Worker -->
+        <line x1="500" y1="508" x2="500" y2="548" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)"/>
+        <rect x="420" y="516" width="160" height="18" rx="4" fill="rgba(245,158,11,0.1)"/>
+        <text x="500" y="528" text-anchor="middle" font-family="Inter" font-size="9" fill="#fbbf24">Worker picks up job</text>
+
+        <!-- Celery Worker -->
+        <rect x="380" y="548" width="240" height="44" rx="8" fill="#1a2240" stroke="#f59e0b" stroke-width="1"/>
+        <text x="500" y="568" text-anchor="middle" font-family="Inter" font-size="11" fill="#fbbf24" font-weight="600">⚙️ Celery Webhook Worker</text>
+        <text x="500" y="584" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Background — non-blocking execution</text>
+
+        <!-- Arrow: Worker → Orchestrator -->
+        <line x1="500" y1="592" x2="500" y2="630" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrow)"/>
+
+        <!-- Orchestrator -->
+        <rect x="280" y="630" width="440" height="60" rx="10" fill="#1a2240" stroke="#06b6d4" stroke-width="1.5"/>
+        <text x="500" y="656" text-anchor="middle" font-family="Inter" font-size="13" fill="#22d3ee" font-weight="700">🧠 Orchestrator Service  :8002</text>
+        <text x="500" y="674" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">Fetches GitHub diff · Loads past patterns · Runs LangGraph → 4 AI Agents</text>
+
+        <!-- 4 AI Agents -->
+        <!-- Static Analysis -->
+        <rect x="30" y="720" width="200" height="48" rx="8" fill="#1a2240" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="130" y="742" text-anchor="middle" font-family="Inter" font-size="11" fill="#a78bfa" font-weight="700">🔍 Static Analysis</text>
+        <text x="130" y="758" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Complexity · Unused Vars · Bad Naming</text>
+
+        <!-- Security -->
+        <rect x="250" y="720" width="200" height="48" rx="8" fill="#1a2240" stroke="#ef4444" stroke-width="1.5"/>
+        <text x="350" y="742" text-anchor="middle" font-family="Inter" font-size="11" fill="#f87171" font-weight="700">🛡️ Security Agent</text>
+        <text x="350" y="758" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">OWASP Top 10 · Secrets · SQL Injection</text>
+
+        <!-- Style -->
+        <rect x="470" y="720" width="200" height="48" rx="8" fill="#1a2240" stroke="#10b981" stroke-width="1.5"/>
+        <text x="570" y="742" text-anchor="middle" font-family="Inter" font-size="11" fill="#34d399" font-weight="700">🎨 Style Agent</text>
+        <text x="570" y="758" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Formatting · Readability · Repo Patterns</text>
+
+        <!-- Architecture -->
+        <rect x="690" y="720" width="200" height="48" rx="8" fill="#1a2240" stroke="#06b6d4" stroke-width="1.5"/>
+        <text x="790" y="742" text-anchor="middle" font-family="Inter" font-size="11" fill="#22d3ee" font-weight="700">🏗️ Architecture Agent</text>
+        <text x="790" y="758" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Separation of Concerns · Error Handling</text>
+
+        <!-- Arrows: Orchestrator → each agent (parallel) -->
+        <line x1="390" y1="690" x2="130" y2="720" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="450" y1="690" x2="350" y2="720" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="550" y1="690" x2="570" y2="720" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrow)"/>
+        <line x1="610" y1="690" x2="790" y2="720" stroke="#6366f1" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- PARALLEL label -->
+        <rect x="420" y="696" width="160" height="18" rx="4" fill="rgba(99,102,241,0.15)"/>
+        <text x="500" y="708" text-anchor="middle" font-family="Inter" font-size="9" fill="#818cf8" font-weight="600">Run in PARALLEL via LangGraph</text>
+
+        <!-- Reviewer Service -->
+        <rect x="700" y="352" width="260" height="60" rx="10" fill="#1a2240" stroke="#10b981" stroke-width="1.5"/>
+        <text x="830" y="376" text-anchor="middle" font-family="Inter" font-size="13" fill="#34d399" font-weight="700">💬 Reviewer Service  :8003</text>
+        <text x="830" y="394" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">JWT Auth · Posts Inline PR Comments · Summary</text>
+
+        <!-- Arrow: Orchestrator → Reviewer (right side) -->
+        <line x1="720" y1="660" x2="830" y2="660" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <line x1="830" y1="660" x2="830" y2="412" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+        <!-- Arrow: Reviewer → GitHub -->
+        <line x1="960" y1="382" x2="990" y2="382" stroke="#10b981" stroke-width="1.5"/>
+        <line x1="990" y1="382" x2="990" y2="46" stroke="#10b981" stroke-width="1.5"/>
+        <line x1="990" y1="46" x2="622" y2="46" stroke="#10b981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+        <rect x="855" y="240" width="130" height="18" rx="4" fill="rgba(16,185,129,0.1)"/>
+        <text x="920" y="252" text-anchor="middle" font-family="Inter" font-size="9" fill="#34d399">Posts PR Review Comments</text>
+
+        <!-- PostgreSQL DB -->
+        <rect x="700" y="452" width="260" height="56" rx="10" fill="#1a2240" stroke="#ec4899" stroke-width="1.5"/>
+        <text x="830" y="476" text-anchor="middle" font-family="Inter" font-size="13" fill="#f472b6" font-weight="700">🗄️ PostgreSQL (RDS)</text>
+        <text x="830" y="494" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">pull_requests · findings · patterns</text>
+
+        <!-- Arrows to Postgres -->
+        <line x1="690" y1="382" x2="700" y2="382" stroke="#4a5568" stroke-width="1" stroke-dasharray="3,2" marker-end="url(#arrow-gray)"/>
+        <line x1="690" y1="382" x2="695" y2="382" stroke="none"/>
+        <line x1="690" y1="382" x2="700" y2="382" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,2"/>
+        <!-- Webhook → DB -->
+        <line x1="620" y1="395" x2="700" y2="468" stroke="#6366f1" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+
+        <!-- Learner Service -->
+        <rect x="700" y="548" width="260" height="60" rx="10" fill="#1a2240" stroke="#f59e0b" stroke-width="1.5"/>
+        <text x="830" y="572" text-anchor="middle" font-family="Inter" font-size="13" fill="#fbbf24" font-weight="700">📚 Learner Service  :8004</text>
+        <text x="830" y="590" text-anchor="middle" font-family="Inter" font-size="10" fill="#64748b">Triggered on PR Merge · Updates Patterns in DB</text>
+
+        <!-- Learner ↔ DB -->
+        <line x1="830" y1="548" x2="830" y2="508" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+        <!-- "PARALLEL" timing label at agents level -->
+        <text x="500" y="712" text-anchor="middle" font-family="Inter" font-size="10" fill="#6366f1" font-weight="600"></text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- WORKFLOW -->
+<section id="workflow">
+  <div class="section-inner">
+    <div class="section-label">🔄 Workflow</div>
+    <h2>End-to-End <span>Workflow</span></h2>
+    <p class="lead">From the moment a developer opens a Pull Request to actionable AI review comments appearing — every step explained.</p>
+
+    <div class="grid-2" style="gap:48px; align-items:start;">
+      <div>
+        <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:24px; color:var(--accent3);">📤 Inbound: PR Opens</h3>
+        <div class="timeline">
+          <div class="timeline-item" data-step="1">
+            <h4>Developer Opens Pull Request</h4>
+            <p>Developer pushes code changes to a feature branch and opens a PR against <code>main</code>. This is the only action required from the developer.</p>
+            <div class="time-badge">0ms</div>
+          </div>
+          <div class="timeline-item" data-step="2">
+            <h4>GitHub Fires Webhook Event</h4>
+            <p>GitHub automatically sends an HTTPS POST request with a JSON payload to your system's public URL (ALB). This is GitHub's built-in webhook mechanism.</p>
+            <div class="time-badge">~2ms</div>
+          </div>
+          <div class="timeline-item" data-step="3">
+            <h4>Gateway Verifies Authenticity</h4>
+            <p>Gateway checks the <code>X-Hub-Signature-256</code> header using HMAC-SHA256. If the signature doesn't match your secret, request is rejected with 401. Prevents fake/spoofed PR events.</p>
+            <div class="time-badge">~5ms</div>
+          </div>
+          <div class="timeline-item" data-step="4">
+            <h4>Webhook Service Processes Event</h4>
+            <p>Parses the payload, extracts PR number, repo name, commit SHA. Checks if this exact commit was already analyzed. Saves PR record to PostgreSQL. Queues a Celery job in Redis.</p>
+            <div class="time-badge">~20ms</div>
+          </div>
+          <div class="timeline-item" data-step="5">
+            <h4>Instant 202 Returned to GitHub</h4>
+            <p>GitHub receives <code>202 Accepted</code> immediately. GitHub's 10-second timeout is never hit. Everything from here is background processing.</p>
+            <div class="time-badge">~25ms</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:24px; color:#34d399;">📥 Background: AI Analysis</h3>
+        <div class="timeline">
+          <div class="timeline-item" data-step="6">
+            <h4>Celery Worker Picks Up Job</h4>
+            <p>A background Celery worker running independently picks up the queued analysis job from Redis and makes an HTTP call to the Orchestrator service.</p>
+            <div class="time-badge">~1s</div>
+          </div>
+          <div class="timeline-item" data-step="7">
+            <h4>Orchestrator Fetches Code Diff</h4>
+            <p>Makes an authenticated call to GitHub API using a short-lived JWT installation token to fetch the exact <code>+/-</code> line changes in the PR diff.</p>
+            <div class="time-badge">~2s</div>
+          </div>
+          <div class="timeline-item" data-step="8">
+            <h4>4 AI Agents Run in Parallel</h4>
+            <p>LangGraph launches all 4 agents simultaneously — Static Analysis, Security, Style, and Architecture. Each sends the diff to GPT-4o-mini with a specialized system prompt.</p>
+            <div class="time-badge">~3s start</div>
+          </div>
+          <div class="timeline-item" data-step="9">
+            <h4>Findings Merged & Saved</h4>
+            <p>All 4 agent responses (structured JSON arrays) are combined, duplicates removed, enriched with severity levels, and written to the <code>findings</code> table in PostgreSQL.</p>
+            <div class="time-badge">~26s</div>
+          </div>
+          <div class="timeline-item" data-step="10">
+            <h4>Reviewer Posts to GitHub PR</h4>
+            <p>Reviewer service generates GitHub API calls to post inline comments on the exact lines of code, plus a full review summary. Developer is notified by GitHub.</p>
+            <div class="time-badge">~30s ✅</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PR Merge Flow -->
+    <div style="margin-top:48px;">
+      <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:24px; color:#fbbf24;">🔀 After Merge: Learning Loop</h3>
+      <div class="highlight-box">
+        <h3>📚 How the System Gets Smarter Over Time</h3>
+        <p style="color:var(--muted); font-size:0.9rem; line-height:1.8;">
+          When a developer merges the PR, GitHub fires a <strong style="color:var(--text);">closed + merged webhook</strong>.
+          A separate Celery <strong style="color:var(--text);">Learner Worker</strong> picks this up and calls the Learner service.
+          It reads all <code>warning</code> and <code>error</code> findings from this PR and upserts them into the
+          <strong style="color:var(--text);"><code>patterns</code></strong> table, incrementing frequency counts for recurring issues.
+          The next time the same repo gets a PR, the Style agent's prompt automatically includes these historical patterns as context —
+          making the review aware of what mistakes <em>this specific team</em> tends to make.
+        </p>
+      </div>
+    </div>
+
+    <!-- Timing Visual -->
+    <h3 style="font-size:1rem; font-weight:700; margin-bottom:20px;">⏱️ Request Flow Timing</h3>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:14px; padding:28px; font-family:'Fira Code', monospace; font-size:0.85rem; line-height:2;">
+      <div><span style="color:#6366f1; font-weight:700;">0ms   </span><span style="color:var(--muted);">——</span> <span style="color:var(--text);">GitHub sends webhook to ALB</span></div>
+      <div><span style="color:#6366f1; font-weight:700;">~5ms  </span><span style="color:var(--muted);">——</span> <span style="color:var(--text);">Gateway verifies HMAC signature, forwards</span></div>
+      <div><span style="color:#6366f1; font-weight:700;">~20ms </span><span style="color:var(--muted);">——</span> <span style="color:var(--text);">Webhook saves PR to DB, queues Celery task</span></div>
+      <div><span style="color:#10b981; font-weight:700;">~25ms </span><span style="color:var(--muted);">——</span> <span style="color:#10b981;">GitHub receives 202 Accepted ✓</span></div>
+      <div style="margin-top:12px; margin-bottom:4px; color:#4a5568; font-size:0.78rem;">───── Background (developer does not wait) ─────</div>
+      <div><span style="color:#f59e0b; font-weight:700;">~1s   </span><span style="color:var(--muted);">——</span> <span style="color:var(--text);">Celery worker picks job, calls Orchestrator</span></div>
+      <div><span style="color:#f59e0b; font-weight:700;">~2s   </span><span style="color:var(--muted);">——</span> <span style="color:var(--text);">Orchestrator fetches diff from GitHub API</span></div>
+      <div><span style="color:#f59e0b; font-weight:700;">~3s   </span><span style="color:var(--muted);">——</span> <span style="color:var(--text);">4 AI agents spin up in PARALLEL (LangGraph)</span></div>
+      <div><span style="color:#f59e0b; font-weight:700;">~15-25s</span><span style="color:var(--muted);">——</span> <span style="color:var(--text);">All 4 agents complete (GPT-4o-mini inference)</span></div>
+      <div><span style="color:#f59e0b; font-weight:700;">~26s  </span><span style="color:var(--muted);">——</span> <span style="color:var(--text);">Findings merged, deduplicated, saved to DB</span></div>
+      <div><span style="color:#10b981; font-weight:700;">~30s  </span><span style="color:var(--muted);">——</span> <span style="color:#10b981;">Review comments posted on GitHub PR ✅</span></div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- AI AGENTS -->
+<section id="agents">
+  <div class="section-inner">
+    <div class="section-label">🤖 AI Agents</div>
+    <h2>How the <span>4 AI Agents</span> Work</h2>
+    <p class="lead">Each agent receives the same code diff but uses a specialized system prompt. They run simultaneously via LangGraph and each returns a structured JSON array of findings.</p>
+
+    <div class="agent-grid" style="margin-bottom:32px;">
+      <div class="agent-card" style="background:rgba(139,92,246,0.08); border-color:rgba(139,92,246,0.3);">
+        <h4 style="color:#a78bfa;">🔍 Static Analysis Agent</h4>
+        <p style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">Prompt: <em>"You are a static analysis tool. Analyze this code diff for..."</em></p>
+        <ul>
+          <li>High cyclomatic complexity functions</li>
+          <li>Unused variables and imports</li>
+          <li>Poor variable / function naming</li>
+          <li>Dead code blocks</li>
+          <li>Magic numbers and hardcoded values</li>
+        </ul>
+      </div>
+      <div class="agent-card" style="background:rgba(239,68,68,0.08); border-color:rgba(239,68,68,0.3);">
+        <h4 style="color:#f87171;">🛡️ Security Agent</h4>
+        <p style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">Prompt: <em>"You are a security scanner. Find OWASP Top 10 vulnerabilities..."</em></p>
+        <ul>
+          <li>SQL injection vulnerabilities</li>
+          <li>Hardcoded secrets & API keys</li>
+          <li>Insecure deserialization</li>
+          <li>XSS and injection flaws</li>
+          <li>Broken access control patterns</li>
+        </ul>
+      </div>
+      <div class="agent-card" style="background:rgba(16,185,129,0.08); border-color:rgba(16,185,129,0.3);">
+        <h4 style="color:#34d399;">🎨 Style Agent</h4>
+        <p style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;"><strong style="color:#fbbf24;">Special:</strong> Prompt includes historical patterns from this repo</p>
+        <ul>
+          <li>Code formatting and indentation</li>
+          <li>Readability and clarity issues</li>
+          <li>Naming consistency</li>
+          <li>Repo-specific past patterns (from Learner)</li>
+          <li>Documentation and comment quality</li>
+        </ul>
+      </div>
+      <div class="agent-card" style="background:rgba(6,182,212,0.08); border-color:rgba(6,182,212,0.3);">
+        <h4 style="color:#22d3ee;">🏗️ Architecture Agent</h4>
+        <p style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">Prompt: <em>"Find separation of concerns violations, missing error handling..."</em></p>
+        <ul>
+          <li>Separation of concerns violations</li>
+          <li>Missing error handling</li>
+          <li>Tight coupling between modules</li>
+          <li>Single responsibility principle breaches</li>
+          <li>Dependency direction issues</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- DB Schema -->
+    <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:16px; color:var(--accent3);">🗄️ Database Schema</h3>
+    <div class="grid-3">
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px;">
+        <div style="color:#f472b6; font-weight:700; font-size:0.9rem; margin-bottom:12px; font-family:'Fira Code'">pull_requests</div>
+        <div style="font-size:0.8rem; font-family:'Fira Code'; line-height:2; color:var(--muted);">
+          <div><span style="color:#a5b4fc;">id</span>              UUID PK</div>
+          <div><span style="color:#a5b4fc;">repo_full_name</span>  TEXT</div>
+          <div><span style="color:#a5b4fc;">pr_number</span>       INT</div>
+          <div><span style="color:#a5b4fc;">head_sha</span>        TEXT</div>
+          <div><span style="color:#a5b4fc;">installation_id</span> BIGINT</div>
+          <div><span style="color:#a5b4fc;">status</span>          TEXT</div>
+          <div><span style="color:#a5b4fc;">created_at</span>      TIMESTAMP</div>
+        </div>
+      </div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px;">
+        <div style="color:#f472b6; font-weight:700; font-size:0.9rem; margin-bottom:12px; font-family:'Fira Code'">findings</div>
+        <div style="font-size:0.8rem; font-family:'Fira Code'; line-height:2; color:var(--muted);">
+          <div><span style="color:#a5b4fc;">id</span>         UUID PK</div>
+          <div><span style="color:#a5b4fc;">pr_id</span>      UUID FK</div>
+          <div><span style="color:#a5b4fc;">file</span>       TEXT</div>
+          <div><span style="color:#a5b4fc;">line</span>       INT</div>
+          <div><span style="color:#a5b4fc;">severity</span>   TEXT</div>
+          <div><span style="color:#a5b4fc;">message</span>    TEXT</div>
+          <div><span style="color:#a5b4fc;">agent</span>      TEXT</div>
+          <div><span style="color:#a5b4fc;">created_at</span> TIMESTAMP</div>
+        </div>
+      </div>
+      <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px;">
+        <div style="color:#f472b6; font-weight:700; font-size:0.9rem; margin-bottom:12px; font-family:'Fira Code'">patterns</div>
+        <div style="font-size:0.8rem; font-family:'Fira Code'; line-height:2; color:var(--muted);">
+          <div><span style="color:#a5b4fc;">id</span>             UUID PK</div>
+          <div><span style="color:#a5b4fc;">repo_full_name</span> TEXT</div>
+          <div><span style="color:#a5b4fc;">pattern_text</span>   TEXT</div>
+          <div><span style="color:#a5b4fc;">frequency</span>      INT</div>
+          <div><span style="color:#a5b4fc;">updated_at</span>     TIMESTAMP</div>
+        </div>
+        <div style="margin-top:10px; font-size:0.78rem; color:#fbbf24; line-height:1.5;">Used by Style Agent as historical context for smarter reviews</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- TECH STACK -->
+<section id="tech">
+  <div class="section-inner">
+    <div class="section-label">🛠️ Tech Stack</div>
+    <h2>Tools & <span>Technologies</span></h2>
+    <p class="lead">Every tool explained simply — what it is, what it does in this project, and why it was chosen.</p>
+
+    <!-- Application Layer -->
+    <div class="tech-section">
+      <h3>⚙️ Application Layer</h3>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="top"><div class="name">Python 3.11</div><div class="badge2">Language</div></div>
+          <div class="desc">The primary programming language for all 5 backend microservices. Python's async/await capabilities make it perfect for I/O-heavy services that call external APIs and databases without blocking.</div>
+          <div class="role">→ All 5 services written in Python</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">FastAPI</div><div class="badge2">Web Framework</div></div>
+          <div class="desc">A modern, high-performance web framework for Python. Handles HTTP routing natively with async support. Much faster than Flask for concurrent requests. Auto-generates API docs.</div>
+          <div class="role">→ HTTP server for all 5 microservices</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">Celery</div><div class="badge2">Task Queue</div></div>
+          <div class="desc">A distributed task queue. Allows the webhook service to queue heavy AI analysis jobs and return a response to GitHub immediately, without waiting 30 seconds. Workers run independently.</div>
+          <div class="role">→ Background task processing for analysis jobs</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">LangGraph</div><div class="badge2">AI Orchestration</div></div>
+          <div class="desc">A framework for building multi-agent AI workflows. Runs all 4 specialized AI agents (Static, Security, Style, Architecture) in parallel and collects their results into a unified output.</div>
+          <div class="role">→ Manages parallel AI agent execution</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">OpenAI GPT-4o-mini</div><div class="badge2">AI Model</div></div>
+          <div class="desc">The large language model that actually reads the code diffs and finds issues. GPT-4o-mini is used for its balance of speed, cost, and capability — ideal for high-volume code review tasks.</div>
+          <div class="role">→ The core AI brain for all 4 review agents</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">SQLAlchemy (async)</div><div class="badge2">ORM / Database</div></div>
+          <div class="desc">A Python database toolkit that provides an object-relational mapper. Uses asyncpg under the hood for non-blocking PostgreSQL queries, preventing database calls from slowing down the services.</div>
+          <div class="role">→ Reads/writes to PostgreSQL without blocking</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">httpx</div><div class="badge2">HTTP Client</div></div>
+          <div class="desc">A modern async HTTP client for Python. Used for all outbound HTTP calls — fetching code diffs from GitHub API, calling internal microservices, and any external requests.</div>
+          <div class="role">→ All inter-service and GitHub API calls</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">PyJWT</div><div class="badge2">Authentication</div></div>
+          <div class="desc">A library that creates signed JSON Web Tokens. The GitHub App authentication requires a JWT signed with the app's private key, valid for 10 minutes, to generate an installation access token.</div>
+          <div class="role">→ GitHub App authentication tokens</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Infrastructure Layer -->
+    <div class="tech-section">
+      <h3>☁️ Infrastructure Layer (AWS)</h3>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="top"><div class="name">AWS EKS</div><div class="badge2">Container Orchestration</div></div>
+          <div class="desc">Amazon Elastic Kubernetes Service. Manages all 5 services as Docker containers across 2 t3.medium nodes. Handles load balancing, pod restarts, rolling deployments, and auto-scaling automatically.</div>
+          <div class="role">→ Runs all 5 containerized microservices in production</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">AWS RDS (PostgreSQL 15)</div><div class="badge2">Database</div></div>
+          <div class="desc">Amazon's managed relational database service. Stores all persistent data: pull request records, AI findings, and learned code patterns. Lives inside a private VPC subnet — unreachable from the internet.</div>
+          <div class="role">→ Persistent storage for PRs, findings, patterns</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">AWS ElastiCache (Redis)</div><div class="badge2">In-Memory Queue</div></div>
+          <div class="desc">Amazon's managed Redis service. Acts as the message broker for Celery. Webhook service pushes jobs in; Celery workers pull them out. Two separate queues: webhook tasks and learning tasks.</div>
+          <div class="role">→ Celery task queue broker between services</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">AWS ECR</div><div class="badge2">Container Registry</div></div>
+          <div class="desc">Elastic Container Registry. A private Docker image repository. GitHub Actions builds images and pushes them here; EKS pulls from here during deployment. Each service has its own ECR repository.</div>
+          <div class="role">→ Stores Docker images for all 5 services</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">AWS ALB</div><div class="badge2">Load Balancer</div></div>
+          <div class="desc">Application Load Balancer. The only publicly accessible entry point. Receives HTTPS webhook events from GitHub and routes traffic into the EKS cluster. Provides the public IP address for the GitHub App webhook URL.</div>
+          <div class="role">→ Public entry point, routes GitHub webhooks</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">Terraform</div><div class="badge2">Infrastructure as Code</div></div>
+          <div class="desc">Declares the entire AWS infrastructure as code. Run one command and it creates the VPC, EKS cluster, RDS, ElastiCache, ECR repos, S3, and all networking. Run another command to destroy everything cleanly.</div>
+          <div class="role">→ Creates and manages all AWS resources</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observability Layer -->
+    <div class="tech-section">
+      <h3>📊 Observability & Quality Layer</h3>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="top"><div class="name">Prometheus</div><div class="badge2">Metrics Collection</div></div>
+          <div class="desc">An open-source time-series monitoring system. Scrapes /metrics endpoints from all 5 FastAPI services every 60 seconds. Stores request counts, latencies, and error rates over time.</div>
+          <div class="role">→ Collects HTTP metrics from all services every 60s</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">Grafana</div><div class="badge2">Dashboards</div></div>
+          <div class="desc">A visualization tool connected to Prometheus. Creates real-time dashboards showing request rate per service, p99 latency, error rate, and pod health. Accessible via browser after port-forward.</div>
+          <div class="role">→ Visual dashboards for all service metrics</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">LangFuse</div><div class="badge2">LLM Tracing</div></div>
+          <div class="desc">A dedicated observability platform for LLM applications. Traces every single OpenAI API call — the exact prompt sent, the response received, token count, cost in dollars, and latency. Essential for LLM debugging.</div>
+          <div class="role">→ Traces every GPT-4o-mini call with full context</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">RAGAS</div><div class="badge2">AI Quality Evaluation</div></div>
+          <div class="desc">A framework for evaluating RAG systems and LLM outputs. Runs automatically every Monday via a GitHub Actions schedule. Measures faithfulness (does the comment match the code?) and relevancy of AI reviews.</div>
+          <div class="role">→ Weekly automated AI comment quality scoring</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CI/CD Layer -->
+    <div class="tech-section">
+      <h3>🚀 CI/CD Layer</h3>
+      <div class="tech-grid">
+        <div class="tech-card">
+          <div class="top"><div class="name">GitHub Actions</div><div class="badge2">CI/CD Pipelines</div></div>
+          <div class="desc">5 independent workflow pipelines — one per service. Each triggers only when that service's code changes. Each pipeline has 3 jobs: test → build+push to ECR → deploy to EKS via kubectl.</div>
+          <div class="role">→ Automated test, build, and deploy on every push</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">Docker</div><div class="badge2">Containerization</div></div>
+          <div class="desc">Each service is packaged into a Docker container with all its dependencies. The exact same image runs locally and in production on EKS, eliminating "works on my machine" problems.</div>
+          <div class="role">→ Containerizes all 5 services for consistent deployment</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">GitHub OIDC</div><div class="badge2">Passwordless Auth</div></div>
+          <div class="desc">OpenID Connect integration between GitHub Actions and AWS. Instead of storing long-lived AWS access keys as secrets, OIDC generates temporary credentials dynamically for each pipeline run. Zero stored AWS keys.</div>
+          <div class="role">→ Secure, keyless AWS authentication for CI pipelines</div>
+        </div>
+        <div class="tech-card">
+          <div class="top"><div class="name">pytest</div><div class="badge2">Testing</div></div>
+          <div class="desc">The standard Python testing framework. Each service has its own test suite that runs in the first job of the CI pipeline. Broken code is caught here and never reaches the build or deploy stages.</div>
+          <div class="role">→ Automated unit/integration tests per service</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- CI/CD -->
+<section id="cicd">
+  <div class="section-inner">
+    <div class="section-label">🔁 CI/CD</div>
+    <h2>Continuous Deployment <span>Pipeline</span></h2>
+    <p class="lead">5 independent GitHub Actions pipelines — one per microservice. Each has 3 sequential jobs ensuring broken code never reaches production.</p>
+
+    <div class="diagram-wrap">
+      <div class="diagram-title">CI/CD Pipeline Flow — Per Service</div>
+      <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;display:block;margin:0 auto;">
+        <defs>
+          <marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/>
+          </marker>
+        </defs>
+        <rect width="900" height="320" fill="#0f1526" rx="12"/>
+
+        <!-- Developer -->
+        <circle cx="70" cy="160" r="40" fill="#1a2240" stroke="#6366f1" stroke-width="2"/>
+        <text x="70" y="155" text-anchor="middle" font-family="Inter" font-size="22">👨‍💻</text>
+        <text x="70" y="174" text-anchor="middle" font-family="Inter" font-size="10" fill="#94a3b8">git push</text>
+
+        <line x1="110" y1="160" x2="160" y2="160" stroke="#6366f1" stroke-width="2" marker-end="url(#a2)"/>
+
+        <!-- GitHub Actions Trigger -->
+        <rect x="160" y="120" width="140" height="80" rx="10" fill="#1a2240" stroke="#6366f1" stroke-width="1.5"/>
+        <text x="230" y="152" text-anchor="middle" font-family="Inter" font-size="11" fill="#818cf8" font-weight="700">GitHub Actions</text>
+        <text x="230" y="168" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Detects changes in</text>
+        <text x="230" y="183" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">services/[name]/ only</text>
+
+        <line x1="300" y1="160" x2="345" y2="160" stroke="#6366f1" stroke-width="2" marker-end="url(#a2)"/>
+
+        <!-- Job 1: Test -->
+        <rect x="345" y="100" width="140" height="120" rx="10" fill="#1a2240" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="415" y="128" text-anchor="middle" font-family="Inter" font-size="10" fill="#a78bfa" font-weight="800">JOB 1: TEST</text>
+        <text x="415" y="146" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Install deps</text>
+        <text x="415" y="162" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Run pytest</text>
+        <text x="415" y="178" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">If fail → STOP</text>
+        <rect x="370" y="186" width="90" height="20" rx="4" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+        <text x="415" y="200" text-anchor="middle" font-family="Inter" font-size="9" fill="#f87171">❌ Fail = Blocked</text>
+
+        <line x1="485" y1="160" x2="530" y2="160" stroke="#6366f1" stroke-width="2" marker-end="url(#a2)"/>
+        <rect x="490" y="148" width="40" height="18" rx="4" fill="rgba(16,185,129,0.1)"/>
+        <text x="510" y="160" text-anchor="middle" font-family="Inter" font-size="9" fill="#34d399">pass</text>
+
+        <!-- Job 2: Build & Push -->
+        <rect x="530" y="100" width="150" height="120" rx="10" fill="#1a2240" stroke="#06b6d4" stroke-width="1.5"/>
+        <text x="605" y="128" text-anchor="middle" font-family="Inter" font-size="10" fill="#22d3ee" font-weight="800">JOB 2: BUILD</text>
+        <text x="605" y="146" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Build Docker image</text>
+        <text x="605" y="162" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Tag with commit SHA</text>
+        <text x="605" y="178" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Push to ECR</text>
+        <text x="605" y="196" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Push as :latest</text>
+
+        <line x1="680" y1="160" x2="725" y2="160" stroke="#6366f1" stroke-width="2" marker-end="url(#a2)"/>
+
+        <!-- Job 3: Deploy -->
+        <rect x="725" y="100" width="150" height="120" rx="10" fill="#1a2240" stroke="#10b981" stroke-width="1.5"/>
+        <text x="800" y="128" text-anchor="middle" font-family="Inter" font-size="10" fill="#34d399" font-weight="800">JOB 3: DEPLOY</text>
+        <text x="800" y="146" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Connect to EKS</text>
+        <text x="800" y="162" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">kubectl set image</text>
+        <text x="800" y="178" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Rolling update</text>
+        <rect x="746" y="186" width="108" height="20" rx="4" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.3)" stroke-width="1"/>
+        <text x="800" y="200" text-anchor="middle" font-family="Inter" font-size="9" fill="#34d399">✅ Zero Downtime</text>
+
+        <!-- Labels below -->
+        <text x="450" y="270" text-anchor="middle" font-family="Inter" font-size="11" fill="#64748b">5 independent pipelines — only changed service triggers · Avg ~8 min total</text>
+        <line x1="20" y1="250" x2="880" y2="250" stroke="#1e2848" stroke-width="1"/>
+
+        <!-- 5 pipelines label -->
+        <rect x="55" y="255" width="790" height="52" rx="8" fill="rgba(99,102,241,0.05)" stroke="rgba(99,102,241,0.15)" stroke-width="1"/>
+        <text x="450" y="278" text-anchor="middle" font-family="Inter" font-size="10" fill="#818cf8" font-weight="600">5 Separate Pipelines: gateway.yml · webhook.yml · orchestrator.yml · reviewer.yml · learner.yml</text>
+        <text x="450" y="296" text-anchor="middle" font-family="Inter" font-size="9" fill="#64748b">Each triggers only when files change inside services/[service-name]/ — other services not affected</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- PRODUCTION GRADE -->
+<section id="production">
+  <div class="section-inner">
+    <div class="section-label">🏆 Production Grade</div>
+    <h2>Why This is <span>Enterprise-Ready</span></h2>
+    <p class="lead">Every production concern is addressed — security, scalability, reliability, observability, and cost efficiency.</p>
+
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:32px;">
+      <table>
+        <thead>
+          <tr>
+            <th>Concern</th>
+            <th>Feature</th>
+            <th>How it is Implemented</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Availability</td><td>Zero Downtime Deploys</td><td>Kubernetes rolling updates — new pods healthy before old stop</td></tr>
+          <tr><td>Scalability</td><td>Auto-scaling (HPA)</td><td>Orchestrator scales 2→10 pods based on CPU usage automatically</td></tr>
+          <tr><td>Reliability</td><td>2× Pod Replicas</td><td>Every service runs 2 pods — pod crash = instant failover</td></tr>
+          <tr><td>Performance</td><td>Async I/O</td><td>All DB + HTTP calls non-blocking via asyncio + asyncpg</td></tr>
+          <tr><td>Security</td><td>HMAC Verification</td><td>Every webhook SHA-256 verified at gateway before processing</td></tr>
+          <tr><td>Security</td><td>No Stored Secrets</td><td>GitHub OIDC for AWS — temporary credentials per pipeline run</td></tr>
+          <tr><td>Security</td><td>Private Network</td><td>RDS and Redis inside private VPC — not accessible from internet</td></tr>
+          <tr><td>Correctness</td><td>Deduplication</td><td>Dedupes by repo+PR+SHA — no duplicate AI calls on resent webhooks</td></tr>
+          <tr><td>Responsiveness</td><td>Background Processing</td><td>Celery decouples analysis — GitHub gets 202 in 25ms, not 30s</td></tr>
+          <tr><td>Isolation</td><td>Dedicated Queues</td><td>Webhook and learning tasks on separate Redis queues</td></tr>
+          <tr><td>Observability</td><td>Metrics</td><td>Prometheus scrapes all 5 services · Grafana dashboards</td></tr>
+          <tr><td>Observability</td><td>LLM Tracing</td><td>LangFuse traces every GPT call with prompt, cost, latency</td></tr>
+          <tr><td>Quality</td><td>Weekly AI Evaluation</td><td>RAGAS evaluates AI comment faithfulness + relevancy every Monday</td></tr>
+          <tr><td>Intelligence</td><td>Self-Improving</td><td>Learner service grows patterns DB — reviews get smarter per repo</td></tr>
+          <tr><td>Resilience</td><td>Graceful Fallback</td><td>If inline GitHub comment fails (422) → falls back to review body</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Security Design -->
+    <h3 style="font-size:1.1rem; font-weight:700; margin-bottom:16px; color:#f87171;">🔐 Security Design</h3>
+    <div class="grid-2">
+      <div class="card" style="border-color:rgba(239,68,68,0.2);">
+        <h3 style="font-size:0.95rem; color:#f87171; margin-bottom:12px;">Perimeter Security</h3>
+        <p><strong>HMAC-SHA256</strong> verification on every single webhook. Requests without valid signatures from GitHub's secret key are rejected at the gateway.</p>
+      </div>
+      <div class="card" style="border-color:rgba(239,68,68,0.2);">
+        <h3 style="font-size:0.95rem; color:#f87171; margin-bottom:12px;">AWS Access (OIDC)</h3>
+        <p>GitHub Actions uses <strong>OpenID Connect</strong> — generates temporary AWS credentials for each pipeline run. Absolutely zero long-lived access/secret keys stored anywhere.</p>
+      </div>
+      <div class="card" style="border-color:rgba(239,68,68,0.2);">
+        <h3 style="font-size:0.95rem; color:#f87171; margin-bottom:12px;">GitHub App Auth</h3>
+        <p>Short-lived <strong>JWT tokens</strong> (10-minute expiry) generated per API call using RSA private key. Never stored in database, never reused.</p>
+      </div>
+      <div class="card" style="border-color:rgba(239,68,68,0.2);">
+        <h3 style="font-size:0.95rem; color:#f87171; margin-bottom:12px;">Network Isolation</h3>
+        <p>PostgreSQL and Redis live inside a <strong>private VPC subnet</strong>. No internet gateway — only the EKS cluster can reach them. Container images in private ECR.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div style="font-size:1.5rem; margin-bottom:8px;">⚡</div>
+  <div><strong>AI Code Reviewer</strong> — Complete Project Guide</div>
+  <div style="margin-top:6px; color:#4a5568; font-size:0.75rem;">
+    5 Microservices · AWS EKS · GPT-4o-mini · LangGraph · Terraform · GitHub Actions · Prometheus · LangFuse
+  </div>
+</footer>
+
+</body>
+</html>
