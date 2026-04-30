@@ -769,7 +769,7 @@ cd "D:\MAJOR PROJECT KRISH SIR\ai-code-reviewer"
 ```
 
 ```
-echo 2 > services\gateway\deploy.txt && echo 2 > services\webhook\deploy.txt && echo 2 > services\orchestrator\deploy.txt && echo 2 > services\reviewer\deploy.txt && echo 2 > services\learner\deploy.txt
+for %s in (gateway webhook orchestrator reviewer learner) do echo 4 > services\%s\deploy.txt
 ```
 
 ```
